@@ -1,0 +1,577 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+    --bg-dark: #1a1a1a;
+    --bg-medium: #2c2c2c;
+    --bg-light: #3a3a3a;
+    --primary-color: #4a90e2;
+    --text-light: #f0f0f0;
+    --text-dark: #1a1a1a;
+    --border-color: #444;
+    --font-main: 'Roboto', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+}
+
+body.light-bg {
+    background-color: #f5f5f5;
+    color: var(--text-dark);
+}
+
+/* --- Scrollbar Styles -- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--bg-light);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* --- Main Container --- */
+.container {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 300px;
+    background-color: var(--bg-dark);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    color: #999999;
+    font-weight: 700;
+    font-size: 1.125rem;
+    text-decoration: none;
+    transition: color 0.3s, background-color 0.3s;
+}
+
+.sidebar a span.material-symbols-outlined {
+    font-size: 1.5rem;
+    transition: color 0.3s;
+}
+
+.sidebar a.bg-primary-500\/10,
+.sidebar a.text-primary-500 {
+    color: white !important;
+}
+
+.sidebar a.bg-primary-500\/10 span.material-symbols-outlined,
+.sidebar a.text-primary-500 span.material-symbols-outlined {
+    color: white !important;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h1 {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+/*#create-note-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#create-note-btn:hover {
+    background-color: #5aa1f2;
+}*/
+
+#notes-list {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.note-item {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.note-item:hover {
+    background-color: var(--bg-light);
+}
+
+.note-item.selected {
+    background-color: var(--primary-color);
+}
+
+.note-item h2 {
+    font-size: 1rem;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.note-item p {
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-top: 4px;
+}
+
+.list-pin-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.8rem;
+    color: #f0f0f0;
+}
+
+/* --- Editor --- */
+.editor-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #777;
+    font-size: 1.2rem;
+}
+
+.editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--bg-medium);
+    transition: background-color 0.3s;
+}
+
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    background-color: var(--bg-dark);
+    border-bottom: 1px solid var(--border-color);
+    gap: 0.5rem;
+}
+
+.editor-toolbar button, .editor-toolbar select, .editor-toolbar input {
+    background: var(--bg-light);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.editor-toolbar button.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+#font-size-input {
+    width: 60px;
+}
+
+#color-picker {
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    border: none;
+    cursor: pointer;
+}
+
+#pin-btn {
+    margin-left: auto;
+    font-size: 1.2rem;
+}
+
+#note-title {
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    font-size: 1.8rem;
+    font-weight: 500;
+    padding: 1rem;
+    outline: none;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#note-content {
+    flex-grow: 1;
+    padding: 1rem;
+    font-size: 16px;
+    line-height: 1.6;
+    outline: none;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+.editor.collapsed #note-content {
+    display: none;
+}
+
+.editor.collapsed {
+    height: auto;
+}
+
+/* --- Context Menu --- */
+.context-menu {
+    display: none;
+    position: fixed;
+    background-color: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 5px 0;
+    z-index: 1000;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.context-menu-item {
+    padding: 8px 15px;
+    cursor: pointer;
+}
+
+.context-menu-item:hover {
+    background-color: var(--primary-color);
+}
+
+/* === FLOATING WINDOW STYLES === */
+.float-body {
+    background-color: transparent;
+}
+
+.float-note-container {
+    background-color: var(--bg-medium);
+    border-radius: 8px;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.float-title-bar {
+    display: none;
+}
+
+.custom-title-bar {
+    -webkit-app-region: drag;
+    height: 30px;
+    background-color: var(--bg-dark);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    user-select: none;
+}
+
+.title-bar-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.traffic-lights {
+    display: flex;
+    gap: 8px;
+    -webkit-app-region: no-drag;
+}
+
+.traffic-light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.traffic-light.red {
+    background-color: #ff5f57;
+}
+
+.traffic-light.yellow {
+    background-color: #ffbd2e;
+}
+
+.traffic-light.green {
+    background-color: #28ca42;
+}
+
+.traffic-light:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.window-title {
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 14px;
+    -webkit-app-region: drag;
+    margin-right: 10px;
+}
+
+.float-reminder {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--bg-dark);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.float-reminder input[type="datetime-local"] {
+    background: var(--bg-light);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.8rem;
+}
+
+.float-reminder button {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.float-reminder button:hover {
+    opacity: 1;
+}
+
+.float-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-app-region: no-drag;
+}
+
+.float-controls {
+    -webkit-app-region: no-drag; /* Excludes controls from drag region */
+}
+
+.float-controls button {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 1rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.float-controls button:hover {
+    opacity: 1;
+}
+
+/* Custom Title Bar */
+.custom-title-bar {
+    height: 28px;
+    background-color: var(--bg-dark);
+    -webkit-app-region: drag;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.title-bar-content {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.window-title {
+    color: var(--text-light);
+    font-size: 13px;
+    text-align: left;
+    padding-left: 10px;
+    font-weight: 500;
+}
+
+.traffic-lights {
+    display: flex;
+    gap: 8px;
+    -webkit-app-region: no-drag;
+}
+
+/* MacOS-style traffic light buttons */
+.traffic-light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.traffic-light:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.traffic-light.red {
+    background-color: #ff5f57;
+}
+
+.traffic-light.yellow {
+    background-color: #ffbd2e;
+}
+
+.traffic-light.green {
+    background-color: #28ca42;
+}
+
+#float-pin-btn.active {
+    color: var(--primary-color);
+}
+
+.float-content {
+    padding: 1rem;
+    flex-grow: 1;
+    overflow-y: auto;
+    line-height: 1.5;
+    transition: all 0.3s ease;
+}
+
+.float-note-container.collapsed .float-content {
+    display: none;
+}
+
+.float-note-container.collapsed {
+    height: auto;
+}
+
+.float-toolbar{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    padding: 4px 6px;
+    background: var(--bg-dark);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.float-toolbar .material-icons,
+.float-controls .material-icons{
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 4px;
+    opacity: .85;
+}
+
+.float-toolbar .material-icons:hover{ opacity: 1; }
+
+.float-toolbar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.float-toolbar .toolbar-basic{
+    display: flex;
+    gap: 4px;
+}
+
+.float-toolbar .toolbar-options{
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.float-toolbar.collapsed .toolbar-options{
+    display: none;
+}
+
+.float-toolbar #toolbar-toggle{
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: auto;
+}
+
+.float-toolbar select, .float-toolbar input[type="color"]{
+    background: var(--bg-light);
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 2px 6px;
+    height: 28px;
+}
+
+.note-colors{
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.color-btn{
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.color-btn:hover{
+    transform: scale(1.1);
+}

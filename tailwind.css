@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+:root {
+  --primary-50: #f0fdf6;
+  --primary-100: #dffcee;
+  --primary-200: #c1f9de;
+  --primary-300: #8ef5c1;
+  --primary-400: #55ea9b;
+  --primary-500: #38e07b;
+  --primary-600: #25c062;
+  --primary-700: #1e984f;
+  --primary-800: #1a7840;
+  --primary-900: #156235;
+  --primary-950: #0a361c;
+}
+
+.group:hover .group-hover\:block {
+  display: block;
+}

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Centro de Notas</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" />
+    <style type="text/tailwindcss">
+      :root {
+        --primary-50: #f0fdf6;
+        --primary-100: #dffcee;
+        --primary-200: #c1f9de;
+        --primary-300: #8ef5c1;
+        --primary-400: #55ea9b;
+        --primary-500: #38e07b;
+        --primary-600: #25c062;
+        --primary-700: #1e984f;
+        --primary-800: #1a7840;
+        --primary-900: #156235;
+        --primary-950: #0a361c;
+      }
+      .group:hover .group-hover\:block {
+        display: block;
+      }
+      .tool-btn {
+        transition: background-color 0.2s;
+      }
+      .tool-btn:hover {
+        background-color: #4b5563;
+      }
+      .tool-btn.bg-gray-600 {
+        background-color: #4b5563;
+      }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-200" style='font-family: "Spline Sans", "Noto Sans", sans-serif;'>
+  <!-- Custom Title Bar -->
+  <div id="custom-title-bar" class="custom-title-bar">
+    <div class="title-bar-content">
+      <div class="window-title">Centro de Notas</div>
+      <div class="spacer"></div>
+      <div class="traffic-lights">
+        <div class="traffic-light red" id="close-btn" title="Cerrar"></div>
+        <div class="traffic-light yellow" id="minimize-btn" title="Minimizar"></div>
+        <div class="traffic-light green" id="maximize-btn" title="Maximizar"></div>
+      </div>
+    </div>
+  </div>
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <aside class="w-full md:w-64 bg-gray-900/50 p-4 md:p-6 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center gap-2 mb-8">
+          <div class="w-8 h-8 bg-primary-500 rounded-lg"></div>
+          <h1 class="text-2xl font-bold text-white">Mis Notas</h1>
+        </div>
+        <nav class="flex flex-col gap-2">
+          <a class="flex items-center gap-3 px-4 py-2 rounded-lg bg-primary-500/10 text-primary-500" href="#" id="all-notes-nav">
+            <span class="material-symbols-outlined">description</span>
+            <span class="font-extrabold text-lg">Notas</span>
+          </a>
+          <a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-800/40 text-gray-400" href="#" id="trash-nav">
+            <span class="material-symbols-outlined">delete</span>
+            <span class="font-extrabold text-lg">Papelera</span>
+          </a>
+          <a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-800/40 text-gray-400" href="#" id="reminders-nav">
+            <span class="material-symbols-outlined">alarm</span>
+            <span class="font-extrabold text-lg">Recordatorios</span>
+          </a>
+          <a class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-800/40 text-gray-400" href="#" id="drawing-nav">
+            <span class="material-symbols-outlined">brush</span>
+            <span class="font-extrabold text-lg">Dibujo</span>
+          </a>
+        </nav>
+        <div class="flex flex-col gap-2 mt-6">
+        <button
+          id="create-note-btn"
+          class="shrink-0 inline-flex items-center justify-center gap-2
+                w-[180px] h-10 rounded-full
+                bg-[#1976F7] text-white text-sm font-semibold
+                transition-colors hover:bg-[#0F5ED7] focus:outline-none focus:ring-2 focus:ring-[#67a5ff]"
+        >
+          <span class="material-symbols-outlined text-base leading-none align-middle">edit</span>
+          <span class="whitespace-nowrap">Nueva Nota</span>
+        </button>
+        <button
+          id="create-reminder-btn"
+          class="shrink-0 inline-flex items-center justify-center gap-2
+                w-[180px] h-10 rounded-full
+                bg-[#FF6B35] text-white text-sm font-semibold
+                transition-colors hover:bg-[#E55A2B] focus:outline-none focus:ring-2 focus:ring-[#FF8A6B]"
+        >
+          <span class="material-symbols-outlined text-base leading-none align-middle">alarm_add</span>
+          <span class="whitespace-nowrap">Nuevo Recordatorio</span>
+        </button>
+        <button
+          id="create-drawing-btn"
+          class="shrink-0 inline-flex items-center justify-center gap-2
+                w-[180px] h-10 rounded-full
+                bg-[#4B5563] text-white text-sm font-semibold
+                transition-colors hover:bg-[#374151] focus:outline-none focus:ring-2 focus:ring-[#6B7280]"
+          style="margin-top: 0.5rem;"
+        >
+          <span class="material-symbols-outlined text-base leading-none align-middle">brush</span>
+          <span class="whitespace-nowrap">Nuevo Dibujo</span>
+        </button>
+        </div>
+      </div>
+    </aside>
+    <button
+      id="start-recording-btn"
+      class="fixed bottom-6 right-6 inline-flex items-center justify-center gap-2
+            w-[56px] h-[56px] rounded-full
+            bg-[#10B981] text-white text-sm font-semibold shadow-lg
+            transition-colors hover:bg-[#059669] focus:outline-none focus:ring-2 focus:ring-[#34D399]"
+      title="Iniciar grabación de audio"
+    >
+      <span class="material-symbols-outlined text-lg leading-none align-middle">mic</span>
+    </button>
+    <button
+      id="stop-recording-btn"
+      class="fixed bottom-20 right-6 inline-flex items-center justify-center gap-2
+            w-[56px] h-[56px] rounded-full
+            bg-[#EF4444] text-white text-sm font-semibold shadow-lg
+            transition-colors hover:bg-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#F87171]
+            hidden"
+      title="Detener grabación de audio"
+    >
+      <span class="material-symbols-outlined text-lg leading-none align-middle">stop</span>
+    </button>
+    <button
+      id="empty-trash-floating-btn"
+      class="fixed bottom-6 right-6 inline-flex items-center justify-center gap-2
+            w-[56px] h-[56px] rounded-full
+            bg-[#EF4444] text-white text-sm font-semibold shadow-lg
+            transition-colors hover:bg-[#DC2626] focus:outline-none focus:ring-2 focus:ring-[#F87171]
+            hidden"
+      title="Vaciar papelera"
+    >
+      <span class="material-symbols-outlined text-lg leading-none align-middle">delete_sweep</span>
+    </button>
+    <div
+      id="recording-status"
+      class="fixed bottom-20 right-6 text-center text-sm text-red-400 font-semibold hidden"
+    >
+      <span class="material-symbols-outlined text-base align-middle mr-1">radio_button_checked</span>
+      Grabando...
+    </div>
+    <main class="flex-1 p-4 md:p-8">
+      <div class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-extrabold text-white" id="main-title">Notas</h2>
+        <div class="flex items-center gap-4">
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">search</span>
+            <input
+              class="w-64 bg-gray-900/70 border border-gray-700 rounded-full pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Buscar Notas"
+              type="text"
+              id="search-input"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="bg-gray-900/50 rounded-xl overflow-hidden border border-gray-800">
+        <table class="w-full text-left" id="notes-table">
+          <thead class="bg-gray-800/60">
+            <tr>
+              <th class="p-4 text-sm font-semibold text-gray-400">Titulo</th>
+              <th class="p-4 text-sm font-semibold text-gray-400">Ultima modificacion</th>
+              <th class="p-4 text-sm font-semibold text-gray-400 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-800" id="notes-tbody">
+            <!-- Notes will be populated here -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal simple para recordatorios -->
+  <div id="reminder-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" style="display: none;">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-semibold text-white mb-4">Nuevo Recordatorio</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Título</label>
+            <input type="text" id="reminder-title" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Título del recordatorio">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Descripción (opcional)</label>
+            <input type="text" id="reminder-description" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500" placeholder="Descripción del recordatorio">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Fecha y hora</label>
+            <input type="datetime-local" id="reminder-datetime" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button id="reminder-cancel" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">Cancelar</button>
+          <button id="reminder-save" class="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors">Crear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="context-menu" class="context-menu">
+    <div class="context-menu-item" id="ctx-open-float">Abrir en ventana</div>
+    <div class="context-menu-item" id="ctx-delete">Eliminar Nota</div>
+  </div>
+
+  <script src="./renderer.js"></script>
+
+  <!-- Modal para dibujo -->
+  <div id="drawing-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-gray-900 rounded-lg shadow-lg w-full max-w-4xl max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b border-gray-700">
+        <h3 class="text-lg font-semibold text-white">Nuevo Dibujo</h3>
+        <button id="close-drawing-btn" class="text-gray-400 hover:text-white">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="flex flex-col flex-grow overflow-hidden">
+        <!-- Toolbar -->
+        <div class="flex items-center gap-2 p-2 bg-gray-700 border-b border-gray-600">
+          <button id="tool-pencil" class="tool-btn p-2 rounded hover:bg-gray-600" title="Lápiz">
+            <span class="material-symbols-outlined">edit</span>
+          </button>
+          <button id="tool-brush" class="tool-btn p-2 rounded hover:bg-gray-600" title="Pincel">
+            <span class="material-symbols-outlined">brush</span>
+          </button>
+          <button id="tool-eraser" class="tool-btn p-2 rounded hover:bg-gray-600" title="Borrador">
+            <span class="material-symbols-outlined">ink_eraser</span>
+          </button>
+          <button id="tool-fill" class="tool-btn p-2 rounded hover:bg-gray-600" title="Relleno">
+            <span class="material-symbols-outlined">format_color_fill</span>
+          </button>
+          <button id="tool-line" class="tool-btn p-2 rounded hover:bg-gray-600" title="Línea">
+            <span class="material-symbols-outlined">show_chart</span>
+          </button>
+          <button id="tool-rectangle" class="tool-btn p-2 rounded hover:bg-gray-600" title="Rectángulo">
+            <span class="material-symbols-outlined">rectangle</span>
+          </button>
+          <button id="tool-circle" class="tool-btn p-2 rounded hover:bg-gray-600" title="Círculo">
+            <span class="material-symbols-outlined">circle</span>
+          </button>
+          <button id="tool-text" class="tool-btn p-2 rounded hover:bg-gray-600" title="Texto">
+            <span class="material-symbols-outlined">text_fields</span>
+          </button>
+          <div class="h-6 w-px bg-gray-500 mx-2"></div>
+          <input type="color" id="drawing-color-picker" class="w-8 h-8 cursor-pointer rounded border border-gray-500" value="#000000" title="Color" />
+          <input type="range" id="drawing-brush-size" min="1" max="50" value="3" class="w-20 cursor-pointer" title="Grosor" />
+          <span id="brush-size-display" class="text-xs text-gray-300 w-6">3</span>
+          <div class="h-6 w-px bg-gray-500 mx-2"></div>
+          <button id="drawing-undo-btn" class="p-2 rounded hover:bg-gray-600" title="Deshacer">
+            <span class="material-symbols-outlined">undo</span>
+          </button>
+          <button id="drawing-redo-btn" class="p-2 rounded hover:bg-gray-600" title="Rehacer">
+            <span class="material-symbols-outlined">redo</span>
+          </button>
+          <button id="drawing-clear-btn" class="p-2 rounded hover:bg-gray-600" title="Limpiar">
+            <span class="material-symbols-outlined">clear</span>
+          </button>
+          <button id="drawing-save-btn" class="p-2 rounded hover:bg-gray-600" title="Guardar">
+            <span class="material-symbols-outlined">save</span>
+          </button>
+        </div>
+        <div class="flex-grow bg-white relative">
+          <canvas id="drawing-canvas" class="w-full h-full cursor-crosshair"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

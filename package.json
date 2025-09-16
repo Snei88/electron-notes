@@ -1,0 +1,41 @@
+{
+  "name": "nota-adhesiva-app",
+  "version": "1.0.0",
+  "description": "Una aplicación de notas adhesivas de escritorio con Electron.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [],
+  "author": "Gemini",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "electron": "^38.0.0",
+    "electron-builder": "^24.9.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13"
+  },
+  "build": {
+    "appId": "com.gemini.nota-adhesiva-app",
+    "productName": "Notas Adhesivas",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "renderer.js",
+      "note.html",
+      "note-renderer.js",
+      "styles.css",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
