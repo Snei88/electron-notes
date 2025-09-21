@@ -1,125 +1,156 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Nota Flotante</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
+  <title>Nota Flotante</title>
+
+  <!-- Tailwind (para utilidades como .hidden, etc.) -->
+  <link rel="stylesheet" href="tailwind.css" />
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Iconos -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
 </head>
 <body class="float-body">
-    <div id="float-note-container" class="float-note-container">
-        <div class="float-title-bar">
-            <div class="float-title" contenteditable="true" spellcheck="false"></div>
-            <div class="float-controls">
-                <button id="float-pin-btn" title="Fijar/Desfijar" class="control-btn pin-btn">
-                    <span class="material-icons">push_pin</span>
-                </button>
-                <button id="float-min-btn" title="Minimizar" class="control-btn min-btn">
-                    <span class="material-icons">minimize</span>
-                </button>
-                <button id="float-close-btn" title="Cerrar" class="control-btn close-btn">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
+  <div id="float-note-container" class="float-note-container">
+    <!-- Barra de título (drag) -->
+    <div class="custom-title-bar">
+      <div class="title-bar-content">
+        <div
+          class="window-title float-title"
+          contenteditable="true"
+          spellcheck="false"
+          role="textbox"
+          aria-multiline="false"
+          aria-label="Título de la nota"
+        ></div>
+
+        <div class="float-controls">
+          <button id="float-pin-btn" type="button" title="Fijar" class="material-icons" aria-label="Fijar">push_pin</button>
+          <button id="float-collapse-btn" type="button" title="Colapsar" class="material-icons" aria-label="Colapsar">expand_less</button>
+          <button id="float-min-btn" type="button" title="Minimizar" class="material-icons" aria-label="Minimizar">minimize</button>
+          <button id="float-close-btn" type="button" title="Cerrar" class="material-icons" aria-label="Cerrar">close</button>
+          <button id="float-delete-btn" type="button" title="Eliminar" class="material-icons" aria-label="Eliminar">delete</button>
         </div>
-
-        
-
-        <!-- 🔧 NUEVA TOOLBAR -->
-        <div class="float-toolbar collapsed">
-            <div class="toolbar-basic">
-                <!-- Estilos inline de selección básicos -->
-                <button data-cmd="bold"        class="material-icons" title="Negrita">format_bold</button>
-                <button data-cmd="italic"      class="material-icons" title="Cursiva">format_italic</button>
-                <button data-cmd="underline"   class="material-icons" title="Subrayado">format_underlined</button>
-                <button data-cmd="strikeThrough" class="material-icons" title="Tachado">strikethrough_s</button>
-            </div>
-            <button id="toolbar-toggle" class="material-symbols-outlined" title="Mostrar/Ocultar opciones">expand_more</button>
-            <div class="toolbar-options">
-                <input  id="color-text" type="color" title="Color de texto">
-                <input  id="color-hilite" type="color" title="Resaltado">
-
-                <!-- Color de la nota -->
-                <div class="note-colors">
-                    <button class="color-btn" data-color="#FFFFFF" title="Blanco"></button>
-                    <button class="color-btn" data-color="#000000" title="Negro"></button>
-                    <button class="color-btn" data-color="#FFB3BA" title="Rosa pastel"></button>
-                    <button class="color-btn" data-color="#FFDFBA" title="Naranja pastel"></button>
-                    <button class="color-btn" data-color="#FFFFBA" title="Amarillo pastel"></button>
-                    <button class="color-btn" data-color="#BAFFBA" title="Verde pastel"></button>
-                    <button class="color-btn" data-color="#BAE1FF" title="Azul pastel"></button>
-                    <button class="color-btn" data-color="#D1BAFF" title="Morado pastel"></button>
-                    <button class="color-btn" data-color="#FFBAE1" title="Rosa claro"></button>
-                    <button class="color-btn" data-color="#BAFFD1" title="Verde menta"></button>
-                    <button class="color-btn" data-color="#FFD1BA" title="Melocotón"></button>
-                    <button class="color-btn" data-color="#E1BAFF" title="Lavanda"></button>
-                </div>
-
-                <!-- Listas / indentación -->
-                <button data-cmd="insertUnorderedList" class="material-icons" title="Lista con viñetas">format_list_bulleted</button>
-                <button data-cmd="insertOrderedList"   class="material-icons" title="Lista numerada">format_list_numbered</button>
-                <button data-cmd="outdent"             class="material-icons" title="Disminuir sangría">format_indent_decrease</button>
-                <button data-cmd="indent"              class="material-icons" title="Aumentar sangría">format_indent_increase</button>
-
-                <!-- Alineación -->
-                <button data-cmd="justifyLeft"   class="material-icons" title="Alinear izquierda">format_align_left</button>
-                <button data-cmd="justifyCenter" class="material-icons" title="Centrar">format_align_center</button>
-                <button data-cmd="justifyRight"  class="material-icons" title="Alinear derecha">format_align_right</button>
-                <button data-cmd="justifyFull"   class="material-icons" title="Justificar">format_align_justify</button>
-
-                <!-- Bloques -->
-                <select id="block-format" title="Encabezados">
-                    <option value="p">Párrafo</option>
-                    <option value="h1">H1</option>
-                    <option value="h2">H2</option>
-                    <option value="h3">H3</option>
-                    <option value="blockquote">Cita</option>
-                    <option value="pre">Código</option>
-                </select>
-
-                <!-- Fuente / tamaño (nota: ya manejas fontFamily y fontSize globales; esto aplica a selección) -->
-                <select id="font-name" title="Tipografía">
-                    <option>Arial</option>
-                    <option>Georgia</option>
-                    <option>Tahoma</option>
-                    <option>Courier New</option>
-                </select>
-                <select id="font-size" title="Tamaño (selección)">
-                    <option value="2">12</option>
-                    <option value="3" selected>14</option>
-                    <option value="4">16</option>
-                    <option value="5">18</option>
-                    <option value="6">24</option>
-                </select>
-
-                <!-- Imágenes / limpiar / undo/redo -->
-                <button id="btn-image"   class="material-icons" title="Insertar imagen">image</button>
-                <input  id="image-input" type="file" accept="image/*" hidden>
-                <button data-cmd="insertHorizontalRule" class="material-icons" title="Regla horizontal">horizontal_rule</button>
-                <button data-cmd="removeFormat" class="material-icons" title="Quitar formato">format_clear</button>
-                <button data-cmd="undo" class="material-icons" title="Deshacer">undo</button>
-                <button data-cmd="redo" class="material-icons" title="Rehacer">redo</button>
-
-                <!-- Sup/Sub -->
-                <button data-cmd="superscript" class="material-icons" title="Superíndice">superscript</button>
-                <button data-cmd="subscript"   class="material-icons" title="Subíndice">subscript</button>
-            </div>
-        </div>
-
-        <!-- Audio Player Section -->
-        <div id="audio-player-section" class="audio-player-section hidden">
-            <div class="audio-player-header">
-                <span class="material-symbols-outlined">mic</span>
-                <span>Archivos de Audio</span>
-            </div>
-            <div id="audio-files-list" class="audio-files-list">
-                <!-- Audio files will be populated here -->
-            </div>
-        </div>
-
-        <div id="float-content" class="float-content" contenteditable="true" spellcheck="false"></div>
+      </div>
     </div>
-    <script src="./note-renderer.js"></script>
+
+    <!-- Toolbar -->
+    <div class="float-toolbar collapsed">
+      <div class="toolbar-basic">
+        <button data-cmd="bold"            type="button" class="material-icons" title="Negrita"      aria-label="Negrita">format_bold</button>
+        <button data-cmd="italic"          type="button" class="material-icons" title="Cursiva"      aria-label="Cursiva">format_italic</button>
+        <button data-cmd="underline"       type="button" class="material-icons" title="Subrayado"    aria-label="Subrayado">format_underlined</button>
+        <button data-cmd="strikeThrough"   type="button" class="material-icons" title="Tachado"      aria-label="Tachado">strikethrough_s</button>
+      </div>
+
+      <!-- Toggle (usa material-icons para heredar estilos) -->
+      <button id="toolbar-toggle" type="button" class="material-icons" title="Mostrar/Ocultar opciones" aria-expanded="false" aria-controls="toolbar-opts">expand_more</button>
+
+      <div id="toolbar-opts" class="toolbar-options">
+        <input id="color-text"   type="color" title="Color de texto" aria-label="Color de texto" />
+        <input id="color-hilite" type="color" title="Resaltado"      aria-label="Color de resaltado" />
+
+        <!-- Color de la nota -->
+        <div class="note-colors" aria-label="Colores de nota">
+          <button class="color-btn" type="button" data-color="#FFFFFF" title="Blanco"         aria-label="Blanco"></button>
+          <button class="color-btn" type="button" data-color="#000000" title="Negro"          aria-label="Negro"></button>
+          <button class="color-btn" type="button" data-color="#FFB3BA" title="Rosa pastel"    aria-label="Rosa pastel"></button>
+          <button class="color-btn" type="button" data-color="#FFDFBA" title="Naranja pastel" aria-label="Naranja pastel"></button>
+          <button class="color-btn" type="button" data-color="#FFFFBA" title="Amarillo pastel"aria-label="Amarillo pastel"></button>
+          <button class="color-btn" type="button" data-color="#BAFFBA" title="Verde pastel"   aria-label="Verde pastel"></button>
+          <button class="color-btn" type="button" data-color="#BAE1FF" title="Azul pastel"    aria-label="Azul pastel"></button>
+          <button class="color-btn" type="button" data-color="#D1BAFF" title="Morado pastel"  aria-label="Morado pastel"></button>
+          <button class="color-btn" type="button" data-color="#FFBAE1" title="Rosa claro"     aria-label="Rosa claro"></button>
+          <button class="color-btn" type="button" data-color="#BAFFD1" title="Verde menta"    aria-label="Verde menta"></button>
+          <button class="color-btn" type="button" data-color="#FFD1BA" title="Melocotón"      aria-label="Melocotón"></button>
+          <button class="color-btn" type="button" data-color="#E1BAFF" title="Lavanda"        aria-label="Lavanda"></button>
+        </div>
+
+        <!-- Listas / indentación -->
+        <button data-cmd="insertUnorderedList" type="button" class="material-icons" title="Lista con viñetas" aria-label="Lista con viñetas">format_list_bulleted</button>
+        <button data-cmd="insertOrderedList"   type="button" class="material-icons" title="Lista numerada"    aria-label="Lista numerada">format_list_numbered</button>
+        <button data-cmd="outdent"             type="button" class="material-icons" title="Disminuir sangría" aria-label="Disminuir sangría">format_indent_decrease</button>
+        <button data-cmd="indent"              type="button" class="material-icons" title="Aumentar sangría"  aria-label="Aumentar sangría">format_indent_increase</button>
+
+        <!-- Alineación -->
+        <button data-cmd="justifyLeft"   type="button" class="material-icons" title="Alinear izquierda" aria-label="Alinear izquierda">format_align_left</button>
+        <button data-cmd="justifyCenter" type="button" class="material-icons" title="Centrar"           aria-label="Centrar">format_align_center</button>
+        <button data-cmd="justifyRight"  type="button" class="material-icons" title="Alinear derecha"   aria-label="Alinear derecha">format_align_right</button>
+        <button data-cmd="justifyFull"   type="button" class="material-icons" title="Justificar"        aria-label="Justificar">format_align_justify</button>
+
+        <!-- Bloques -->
+        <label for="block-format" class="sr-only">Formato de bloque</label>
+        <select id="block-format" title="Encabezados" aria-label="Formato de bloque">
+          <option value="p">Párrafo</option>
+          <option value="h1">H1</option>
+          <option value="h2">H2</option>
+          <option value="h3">H3</option>
+          <option value="blockquote">Cita</option>
+          <option value="pre">Código</option>
+        </select>
+
+        <!-- Fuente / tamaño -->
+        <label for="font-name" class="sr-only">Tipografía</label>
+        <select id="font-name" title="Tipografía" aria-label="Tipografía">
+          <option>Arial</option>
+          <option>Georgia</option>
+          <option>Tahoma</option>
+          <option>Courier New</option>
+        </select>
+
+        <label for="font-size" class="sr-only">Tamaño de fuente</label>
+        <select id="font-size" title="Tamaño (selección)" aria-label="Tamaño de fuente">
+          <option value="2">12</option>
+          <option value="3" selected>14</option>
+          <option value="4">16</option>
+          <option value="5">18</option>
+          <option value="6">24</option>
+        </select>
+
+        <!-- Imágenes / limpiar / undo/redo -->
+        <button id="btn-image" type="button" class="material-icons" title="Insertar imagen" aria-label="Insertar imagen">image</button>
+        <input id="image-input" type="file" accept="image/*" hidden />
+        <button data-cmd="insertHorizontalRule" type="button" class="material-icons" title="Regla horizontal" aria-label="Regla horizontal">horizontal_rule</button>
+        <button data-cmd="removeFormat"        type="button" class="material-icons" title="Quitar formato"    aria-label="Quitar formato">format_clear</button>
+        <button data-cmd="undo"                type="button" class="material-icons" title="Deshacer"          aria-label="Deshacer">undo</button>
+        <button data-cmd="redo"                type="button" class="material-icons" title="Rehacer"           aria-label="Rehacer">redo</button>
+
+        <!-- Sup/Sub -->
+        <button data-cmd="superscript" type="button" class="material-icons" title="Superíndice" aria-label="Superíndice">superscript</button>
+        <button data-cmd="subscript"   type="button" class="material-icons" title="Subíndice"   aria-label="Subíndice">subscript</button>
+      </div>
+    </div>
+
+    <!-- Audio Player Section -->
+    <div id="audio-player-section" class="audio-player-section hidden" aria-hidden="true">
+      <div class="audio-player-header">
+        <span class="material-icons" aria-hidden="true">mic</span>
+        <span>Archivos de Audio</span>
+      </div>
+      <div id="audio-files-list" class="audio-files-list">
+        <!-- Se llena dinámicamente -->
+      </div>
+    </div>
+
+    <!-- Contenido de la nota -->
+    <div
+      id="float-content"
+      class="float-content"
+      contenteditable="true"
+      spellcheck="false"
+      role="textbox"
+      aria-multiline="true"
+      aria-label="Contenido de la nota"
+    ></div>
+  </div>
+
+  <script src="./note-renderer.js" defer></script>
 </body>
 </html>

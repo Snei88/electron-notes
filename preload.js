@@ -1,52 +1,114 @@
+'use strict';
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('api', {
-    // --- Invocaciones (Renderer -> Main -> Renderer) ---
-    getNotes: () => ipcRenderer.invoke('get-notes'),
-    getNoteData: (noteId) => ipcRenderer.invoke('get-note-data', noteId),
-    getTrashNotes: () => ipcRenderer.invoke('get-trash-notes'),
-    getReminders: () => ipcRenderer.invoke('get-reminders'),
+/** Helper para crear suscripción con devolución de unsubscribe */
+function makeOn(channel, mapArgs = (args) => args.length <= 1 ? args[0] : args) {
+  return (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, ...args) => {
+      try { callback(mapArgs(args)); } catch (e) { console.error(`Listener error (${channel})`, e); }
+    };
+    ipcRenderer.on(channel, listener);
+    // Permite limpiar el listener cuando quieras
+    return () => ipcRenderer.removeListener(channel, listener);
+  };
+}
 
-    // --- Eventos (Renderer -> Main) ---
-    saveNote: (note) => ipcRenderer.send('save-note', note),
-    deleteNote: (noteId) => ipcRenderer.send('delete-note', noteId),
-    recoverNote: (noteId) => ipcRenderer.send('recover-note', noteId),
-    deleteNotePermanent: (noteId) => ipcRenderer.send('delete-note-permanent', noteId),
-    emptyTrash: () => ipcRenderer.send('empty-trash'),
-    openInFloatWindow: (noteId) => ipcRenderer.send('open-in-float-window', noteId),
-    floatWindowAction: (action, noteId) => ipcRenderer.send('float-window-action', { action, noteId }),
-    preventClose: () => ipcRenderer.send('prevent-close'),
-    saveReminder: (reminder) => ipcRenderer.send('save-reminder', reminder),
-    deleteReminder: (reminderId) => ipcRenderer.send('delete-reminder', reminderId),
+/** Helper para "once" */
+function makeOnce(channel, mapArgs = (args) => args.length <= 1 ? args[0] : args) {
+  return (callback) => {
+    if (typeof callback !== 'function') return;
+    ipcRenderer.once(channel, (_event, ...args) => {
+      try { callback(mapArgs(args)); } catch (e) { console.error(`Once listener error (${channel})`, e); }
+    });
+  };
+}
 
-    // --- Audio Notes ---
-    saveAudio: (audioBuffer) => ipcRenderer.send('save-audio', audioBuffer),
-    onAudioNoteCreated: (callback) => ipcRenderer.on('audio-note-created', (event, note) => callback(note)),
-    onAudioSaveError: (callback) => ipcRenderer.on('audio-save-error', (event, error) => callback(error)),
+/** No exponemos removeAllListeners genérico para no abrir superficie de ataque;
+ *  damos off* específicos por canal cuando sea útil. */
+const api = {
+  // --- Invocaciones (Renderer -> Main -> Renderer) ---
+  getNotes:        () => ipcRenderer.invoke('get-notes'),
+  getNoteData:     (noteId) => ipcRenderer.invoke('get-note-data', noteId),
+  getTrashNotes:   () => ipcRenderer.invoke('get-trash-notes'),
+  getReminders:    () => ipcRenderer.invoke('get-reminders'),
 
-    // --- Drawing ---
-    saveDrawing: (data) => ipcRenderer.send('save-drawing', data),
-    getDrawingData: (filePath) => ipcRenderer.invoke('get-drawing-data', filePath),
-    onDrawingSaved: (callback) => ipcRenderer.on('drawing-saved', (event, note) => callback(note)),
-    onDrawingSaveError: (callback) => ipcRenderer.on('drawing-save-error', (event, error) => callback(error)),
+  // --- Eventos (Renderer -> Main) ---
+  saveNote:            (note)   => ipcRenderer.send('save-note', note),
+  deleteNote:          (noteId) => ipcRenderer.send('delete-note', noteId),
+  recoverNote:         (noteId) => ipcRenderer.send('recover-note', noteId),
+  deleteNotePermanent: (noteId) => ipcRenderer.send('delete-note-permanent', noteId),
+  emptyTrash:          ()       => ipcRenderer.send('empty-trash'),
+  openInFloatWindow:   (noteId) => ipcRenderer.send('open-in-float-window', noteId),
+  floatWindowAction:   (action, noteId) => ipcRenderer.send('float-window-action', { action, noteId }),
+  preventClose:        ()       => ipcRenderer.send('prevent-close'),
+  saveReminder:        (reminder) => ipcRenderer.send('save-reminder', reminder),
+  deleteReminder:      (reminderId) => ipcRenderer.send('delete-reminder', reminderId),
 
-    // --- Eventos (Main -> Renderer) ---
-    onNoteUpdated: (callback) => ipcRenderer.on('note-updated', (event, note) => callback(note)),
-    onNoteDeleted: (callback) => ipcRenderer.on('note-deleted', (event, noteId) => callback(noteId)),
-    onNoteRecovered: (callback) => ipcRenderer.on('note-recovered', (event, noteId) => callback(noteId)),
-    onNoteDeletedPermanent: (callback) => ipcRenderer.on('note-deleted-permanent', (event, noteId) => callback(noteId)),
-    onTrashEmptied: (callback) => ipcRenderer.on('trash-emptied', () => callback()),
-    onReminderUpdated: (callback) => ipcRenderer.on('reminder-updated', (event, reminder) => callback(reminder)),
-    onReminderDeleted: (callback) => ipcRenderer.on('reminder-deleted', (event, reminderId) => callback(reminderId)),
+  // --- Audio Notes ---
+  // Si quisieras esperar confirmación, podrías migrar a invoke('save-audio', buf) en el main.
+  saveAudio:            (audioBuffer) => ipcRenderer.send('save-audio', audioBuffer),
+  onAudioNoteCreated:   makeOn('audio-note-created'),
+  onceAudioNoteCreated: makeOnce('audio-note-created'),
+  offAudioNoteCreated:  () => ipcRenderer.removeAllListeners('audio-note-created'),
 
-    // --- API de Notificaciones ---
-    scheduleNotification: (payload) => ipcRenderer.invoke('notify:schedule', payload),
-    cancelNotification: (id) => ipcRenderer.invoke('notify:cancel', id),
-    onNotificationClicked: (callback) => ipcRenderer.on('notification:clicked', (event, data) => callback(data)),
-    onNotificationFallback: (callback) => ipcRenderer.on('notification:fallback', (event, data) => callback(data)),
+  onAudioSaveError:     makeOn('audio-save-error'),
+  onceAudioSaveError:   makeOnce('audio-save-error'),
+  offAudioSaveError:    () => ipcRenderer.removeAllListeners('audio-save-error'),
 
-    // --- Controles de Ventana ---
-    minimizeWindow: () => ipcRenderer.send('minimize-window'),
-    maximizeWindow: () => ipcRenderer.send('maximize-window'),
-    closeWindow: () => ipcRenderer.send('close-window'),
-});
+  // --- Drawing ---
+  saveDrawing:    (data)    => ipcRenderer.send('save-drawing', data),
+  getDrawingData: (filePath)=> ipcRenderer.invoke('get-drawing-data', filePath),
+
+  onDrawingSaved:        makeOn('drawing-saved'),
+  onceDrawingSaved:      makeOnce('drawing-saved'),
+  offDrawingSaved:       () => ipcRenderer.removeAllListeners('drawing-saved'),
+
+  onDrawingSaveError:    makeOn('drawing-save-error'),
+  onceDrawingSaveError:  makeOnce('drawing-save-error'),
+  offDrawingSaveError:   () => ipcRenderer.removeAllListeners('drawing-save-error'),
+
+  // --- Eventos (Main -> Renderer) ---
+  onNoteUpdated:         makeOn('note-updated'),
+  onceNoteUpdated:       makeOnce('note-updated'),
+  offNoteUpdated:        () => ipcRenderer.removeAllListeners('note-updated'),
+
+  onNoteDeleted:         makeOn('note-deleted'),
+  onceNoteDeleted:       makeOnce('note-deleted'),
+  offNoteDeleted:        () => ipcRenderer.removeAllListeners('note-deleted'),
+
+  onNoteRecovered:       makeOn('note-recovered'),
+  onceNoteRecovered:     makeOnce('note-recovered'),
+  offNoteRecovered:      () => ipcRenderer.removeAllListeners('note-recovered'),
+
+  onNoteDeletedPermanent:  makeOn('note-deleted-permanent'),
+  onceNoteDeletedPermanent:makeOnce('note-deleted-permanent'),
+  offNoteDeletedPermanent: () => ipcRenderer.removeAllListeners('note-deleted-permanent'),
+
+  onTrashEmptied:        makeOn('trash-emptied'),
+  onceTrashEmptied:      makeOnce('trash-emptied'),
+  offTrashEmptied:       () => ipcRenderer.removeAllListeners('trash-emptied'),
+
+  onReminderUpdated:     makeOn('reminder-updated'),
+  onceReminderUpdated:   makeOnce('reminder-updated'),
+  offReminderUpdated:    () => ipcRenderer.removeAllListeners('reminder-updated'),
+
+  onReminderDeleted:     makeOn('reminder-deleted'),
+  onceReminderDeleted:   makeOnce('reminder-deleted'),
+  offReminderDeleted:    () => ipcRenderer.removeAllListeners('reminder-deleted'),
+
+  // --- API de Notificaciones ---
+  scheduleNotification:  (payload) => ipcRenderer.invoke('notify:schedule', payload),
+  cancelNotification:    (id)      => ipcRenderer.invoke('notify:cancel', id),
+  onNotificationClicked: makeOn('notification:clicked'),
+  offNotificationClicked:() => ipcRenderer.removeAllListeners('notification:clicked'),
+  onNotificationFallback:makeOn('notification:fallback'),
+  offNotificationFallback:() => ipcRenderer.removeAllListeners('notification:fallback'),
+
+  // --- Controles de Ventana ---
+  minimizeWindow: () => ipcRenderer.send('minimize-window'),
+  maximizeWindow: () => ipcRenderer.send('maximize-window'),
+  closeWindow:    () => ipcRenderer.send('close-window'),
+};
+
+contextBridge.exposeInMainWorld('api', Object.freeze(api));

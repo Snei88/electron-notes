@@ -290,7 +290,11 @@ body.light-bg {
 }
 
 .float-title-bar {
-    display: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    -webkit-app-region: drag; /* Makes the bar draggable */
 }
 
 .custom-title-bar {

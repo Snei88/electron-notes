@@ -2,21 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles */
+/* Variables de color primario (modo claro por defecto). 
+   Tailwind las usará como rgb(var(--primary-500) / <alpha-value>) */
 :root {
-  --primary-50: #f0fdf6;
-  --primary-100: #dffcee;
-  --primary-200: #c1f9de;
-  --primary-300: #8ef5c1;
-  --primary-400: #55ea9b;
-  --primary-500: #38e07b;
-  --primary-600: #25c062;
-  --primary-700: #1e984f;
-  --primary-800: #1a7840;
-  --primary-900: #156235;
-  --primary-950: #0a361c;
+  --primary-50:  240 253 246;
+  --primary-100: 223 252 238;
+  --primary-200: 193 249 222;
+  --primary-300: 142 245 193;
+  --primary-400: 85  234 155;
+  --primary-500: 56  224 123;
+  --primary-600: 37  192 98;
+  --primary-700: 30  152 79;
+  --primary-800: 26  120 64;
+  --primary-900: 21  98  53;
+  --primary-950: 10  54  28;
 }
 
-.group:hover .group-hover\:block {
-  display: block;
-}
+/* No necesitas reimplementar group-hover: Tailwind ya lo trae. 
+   Eliminamos la regla manual que forzaba display:block. */

@@ -1,4 +1,0 @@
-- [x] Remove the empty-trash-btn element from index.html
-- [x] Remove const emptyTrashBtn from renderer.js
-- [x] Remove emptyTrashBtn event listener from renderer.js
-- [x] Remove emptyTrashBtn classList manipulations in nav listeners in renderer.js
