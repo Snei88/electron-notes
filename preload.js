@@ -109,6 +109,14 @@ const api = {
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
   maximizeWindow: () => ipcRenderer.send('maximize-window'),
   closeWindow:    () => ipcRenderer.send('close-window'),
+
+    // --- Settings (tema) ---
+  getSettings:  () => ipcRenderer.invoke('settings:get'),
+  setSettings:  (patch) => ipcRenderer.send('settings:set', patch),
+  onSettingsChanged: makeOn('settings:changed'),
+  offSettingsChanged: () => ipcRenderer.removeAllListeners('settings:changed'),
+
+
 };
 
 contextBridge.exposeInMainWorld('api', Object.freeze(api));

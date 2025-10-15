@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html lang="es-ES">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resumen Ejecutivo - Ejecución Presupuestal</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet"/>
+<style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: white;
+            color: #333;
+            position: relative;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #2B4B8C;
+            color: white;
+            padding: 20px 40px;
+            position: relative;
+        }
+        .title {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .subtitle {
+            font-size: 20px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+        .accent-dot {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+        .dot-1 {
+            background-color: #00BFA5;
+            right: 80px;
+            top: 30px;
+        }
+        .dot-2 {
+            background-color: #FDB913;
+            right: 50px;
+            top: 30px;
+        }
+        .dot-3 {
+            background-color: #E53935;
+            right: 20px;
+            top: 30px;
+        }
+        .indicator-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        .indicator-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+        }
+        .card-blue::before {
+            background-color: #2B4B8C;
+        }
+        .card-green::before {
+            background-color: #00BFA5;
+        }
+        .card-gold::before {
+            background-color: #FDB913;
+        }
+        .card-red::before {
+            background-color: #E53935;
+        }
+        .card-purple::before {
+            background-color: #7E57C2;
+        }
+        .icon-container {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 24px;
+            flex-shrink: 0;
+        }
+        .bg-blue-light {
+            background-color: rgba(43, 75, 140, 0.1);
+        }
+        .bg-green-light {
+            background-color: rgba(0, 191, 165, 0.1);
+        }
+        .bg-gold-light {
+            background-color: rgba(253, 185, 19, 0.1);
+        }
+        .bg-red-light {
+            background-color: rgba(229, 57, 53, 0.1);
+        }
+        .bg-purple-light {
+            background-color: rgba(126, 87, 194, 0.1);
+        }
+        .text-blue {
+            color: #2B4B8C;
+        }
+        .text-green {
+            color: #00BFA5;
+        }
+        .text-gold {
+            color: #FDB913;
+        }
+        .text-red {
+            color: #E53935;
+        }
+        .text-purple {
+            color: #7E57C2;
+        }
+        .indicator-icon {
+            font-size: 28px;
+        }
+        .indicator-label {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .indicator-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 40px;
+            background-color: #f5f5f5;
+            font-size: 14px;
+            color: #666;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+<div class="slide-container">
+<!-- Header -->
+<div class="header">
+<h1 class="title">RESUMEN EJECUTIVO</h1>
+<p class="subtitle">Indicadores clave de gestión presupuestal | Corte: 13 de octubre de 2025</p>
+<div class="accent-dot dot-1"></div>
+<div class="accent-dot dot-2"></div>
+<div class="accent-dot dot-3"></div>
+</div>
+<!-- Contenido principal: Indicadores -->
+<div class="p-10">
+<!-- Indicador 1: Presupuesto Inicial -->
+<div class="indicator-card card-blue">
+<div class="icon-container bg-blue-light">
+<i class="fas fa-wallet indicator-icon text-blue"></i>
+</div>
+<div>
+<div class="indicator-label">Presupuesto Inicial</div>
+<div class="indicator-value text-blue">$945,953M</div>
+</div>
+<div class="ml-auto text-gray-500">
+<span class="text-sm">Punto de partida</span>
+</div>
+</div>
+<!-- Indicador 2: Apropiación Definitiva -->
+<div class="indicator-card card-purple">
+<div class="icon-container bg-purple-light">
+<i class="fas fa-file-invoice-dollar indicator-icon text-purple"></i>
+</div>
+<div>
+<div class="indicator-label">Apropiación Definitiva</div>
+<div class="indicator-value text-purple">$1,193,253M</div>
+</div>
+<div class="ml-auto text-gray-500">
+<span class="text-sm">Tras adiciones y reducciones</span>
+</div>
+</div>
+<!-- Indicador 3: Total Ejecutado -->
+<div class="indicator-card card-green">
+<div class="icon-container bg-green-light">
+<i class="fas fa-chart-line indicator-icon text-green"></i>
+</div>
+<div>
+<div class="indicator-label">Total Ejecutado</div>
+<div class="indicator-value text-green">$762,094M</div>
+</div>
+<div class="ml-auto text-gray-500">
+<span class="text-sm">Compromisos realizados</span>
+</div>
+</div>
+<!-- Indicador 4: Presupuesto Disponible -->
+<div class="indicator-card card-gold">
+<div class="icon-container bg-gold-light">
+<i class="fas fa-box indicator-icon text-gold"></i>
+</div>
+<div>
+<div class="indicator-label">Presupuesto Disponible</div>
+<div class="indicator-value text-gold">$385,488M</div>
+</div>
+<div class="ml-auto text-gray-500">
+<span class="text-sm">Por ejecutar</span>
+</div>
+</div>
+<!-- Indicador 5: % de Ejecución -->
+<div class="indicator-card card-red">
+<div class="icon-container bg-red-light">
+<i class="fas fa-percent indicator-icon text-red"></i>
+</div>
+<div>
+<div class="indicator-label">% de Ejecución</div>
+<div class="indicator-value text-red">63.87%</div>
+</div>
+<div class="ml-auto text-gray-500">
+<span class="text-sm">Meta mínima: 75%</span>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="footer">
+<div>Dirección Financiera · Tercer Trimestre 2025</div>
+</div>
+</div>
+</body>
+</html>

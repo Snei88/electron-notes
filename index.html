@@ -43,6 +43,7 @@
     <div class="title-bar-content">
       <div class="window-title">Centro de Notas</div>
       <div class="spacer"></div>
+      <button id="theme-toggle-btn" class="material-icons" title="Tema">dark_mode</button>
       <div class="traffic-lights">
         <div class="traffic-light red" id="close-btn" title="Cerrar"></div>
         <div class="traffic-light yellow" id="minimize-btn" title="Minimizar"></div>
@@ -51,7 +52,7 @@
     </div>
   </div>
   <div class="flex flex-col md:flex-row min-h-screen">
-    <aside class="w-full md:w-64 bg-gray-900/50 p-4 md:p-6 flex flex-col justify-between">
+    <aside class="sidebar w-full md:w-64 bg-gray-900/50 p-4 md:p-6 flex flex-col justify-between">
       <div>
         <div class="flex items-center gap-2 mb-8">
           <div class="w-8 h-8 bg-primary-500 rounded-lg"></div>
@@ -151,12 +152,12 @@
     </div>
     <main class="flex-1 p-4 md:p-8">
       <div class="flex justify-between items-center mb-8">
-        <h2 class="text-3xl font-extrabold text-white" id="main-title">Notas</h2>
+        <h2 class="text-3xl font-extrabold tracking-tight text-white" id="main-title">Notas</h2>
         <div class="flex items-center gap-4">
           <div class="relative">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">search</span>
             <input
-              class="w-64 bg-gray-900/70 border border-gray-700 rounded-full pl-10 pr-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              class="w-64 bg-white border border-gray-200 rounded-full pl-10 pr-4 py-2 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Buscar Notas"
               type="text"
               id="search-input"
@@ -164,13 +165,13 @@
           </div>
         </div>
       </div>
-      <div class="bg-gray-900/50 rounded-xl overflow-hidden border border-gray-800">
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
         <table class="w-full text-left" id="notes-table">
-          <thead class="bg-gray-800/60">
+          <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th class="p-4 text-sm font-semibold text-gray-400">Titulo</th>
-              <th class="p-4 text-sm font-semibold text-gray-400">Ultima modificacion</th>
-              <th class="p-4 text-sm font-semibold text-gray-400 text-right">Acciones</th>
+              <th class="p-4 text-sm font-semibold text-gray-600">Título</th>
+              <th class="p-4 text-sm font-semibold text-gray-600">Última modificación</th>
+              <th class="p-4 text-sm font-semibold text-gray-600 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-800" id="notes-tbody">

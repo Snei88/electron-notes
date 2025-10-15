@@ -1,5 +1,6 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // ------- Referencias DOM (con safeguards) -------
+
   const $ = (id) => document.getElementById(id);
 
   const notesTbody = $('notes-tbody');
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const drawingNav = $('drawing-nav');
   const mainTitle = $('main-title');
   const emptyTrashFloatingBtn = $('empty-trash-floating-btn');
+  const themeToggleBtn = $('theme-toggle-btn');
 
   // Drawing modal elements
   const drawingModal = $('drawing-modal');
@@ -101,6 +103,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const fmtTime = (date) =>
     new Intl.DateTimeFormat('es-CO', { hour: '2-digit', minute: '2-digit' }).format(date);
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+    if (themeToggleBtn) themeToggleBtn.textContent = theme === 'light' ? 'light_mode' : 'dark_mode';
+  }
+
+  async function initTheme() {
+    const s = await window.api.getSettings();
+    applyTheme(s?.theme || 'dark');
+  }
 
   function formatDateRelativeOrLocal(dateString) {
     const date = new Date(dateString);
@@ -1144,6 +1156,16 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(`Error al guardar el dibujo:\n${error}`);
   });
 
+  // ------- Theme Listeners -------
+  themeToggleBtn?.addEventListener('click', async () => {
+    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    window.api.setSettings({ theme: next });
+  });
+
+  window.api.onSettingsChanged((s) => applyTheme(s?.theme || 'dark'));
+
   // ------- Atajos de teclado -------
   document.addEventListener('keydown', (e) => {
     if (e.ctrlKey || e.metaKey) {
@@ -1178,6 +1200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   closeBtn?.addEventListener('click', () => window.api.closeWindow());
 
   // ------- Init -------
+  await initTheme();
   ensureImprovedStylesOnce();
   loadInitialNotes();
   updateCreateButtonsVisibility();

@@ -28,6 +28,17 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentNote = null;
   let debounceTimer;
 
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+  }
+
+  async function initTheme() {
+    const s = await window.api.getSettings();
+    applyTheme(s?.theme || 'dark');
+  }
+
+  window.api.onSettingsChanged((s) => applyTheme(s?.theme || 'dark'));
+
   // ---------- Sanitizador sencillo (whitelist) ----------
   const ALLOWED = {
     a: ['href','title','target','rel'],
@@ -101,6 +112,30 @@ document.addEventListener('DOMContentLoaded', () => {
       range.setEnd(saved.endContainer, saved.endOffset);
       sel.addRange(range);
     } catch { /* puede fallar si cambió el DOM */ }
+  }
+  
+  function insertSoftBreak(el) {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    
+    // Inserta <br> y posiciona el cursor después
+    const br = document.createElement('br');
+    range.insertNode(br);
+    
+    // Evita que el cursor quede “atascado” al final del nodo
+    const spacer = document.createTextNode('');
+    br.after(spacer);
+    
+    const newRange = document.createRange();
+    newRange.setStartAfter(br);
+    newRange.setEndAfter(br);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    
+    // Desplaza scroll si hace falta
+    el.scrollTop = el.scrollHeight;
   }
 
   // ---------- UI Helpers ----------
@@ -176,6 +211,14 @@ document.addEventListener('DOMContentLoaded', () => {
         audioFilesList.appendChild(item);
       });
       audioPlayerSection.classList.remove('hidden');
+  // Forzar Enter = salto de línea normal
+  // Enter = <br> (no crear <div>, no saltar al inicio)
+  contentEl?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      insertSoftBreak(contentEl);
+    }
+  });
       audioPlayerSection.setAttribute('aria-hidden', 'false');
     } else {
       audioPlayerSection.classList.add('hidden');
@@ -192,9 +235,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   contentEl?.addEventListener('input', () => {
     if (!currentNote) return;
-    // sanea lo que se guarda
+    const saved = saveSelection();                 // ❶ guarda selección
     const clean = sanitizeHTML(contentEl.innerHTML);
-    if (clean !== contentEl.innerHTML) contentEl.innerHTML = clean;
+    if (clean !== contentEl.innerHTML) {
+      contentEl.innerHTML = clean;                 // ❷ reescribe solo si cambió
+      restoreSelection(saved);                     // ❸ restaura selección
+    }
     currentNote.content = clean;
     debouncedSave();
   });
@@ -239,9 +285,20 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   colorTextInput?.addEventListener('input', () => {
-    document.execCommand('foreColor', false, colorTextInput.value);
-    contentEl?.focus();
+    if (!contentEl) return;
+    const color = colorTextInput.value;
+    document.execCommand('styleWithCSS', true, null);
+    document.execCommand('foreColor', false, color);
+
+    // Guarda en estilos del note
+    if (currentNote) {
+      currentNote.styles = currentNote.styles || {};
+      currentNote.styles.textColor = color;
+      debouncedSave();
+    }
+    contentEl.focus();
   });
+
 
   colorHiliteInput?.addEventListener('input', () => {
     // soporte en Chromium
@@ -344,6 +401,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---------- Init ----------
   async function initialize() {
+    await initTheme();
+    
     if (!noteId) { alert('Nota no encontrada'); window.close(); return; }
     const note = await window.api.getNoteData(noteId);
     if (!note) { alert('No se pudo cargar la nota'); window.close(); return; }

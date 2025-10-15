@@ -11,6 +11,8 @@ let notes = {};
 let trashNotes = {};
 let reminders = {};
 let notificationTimeouts = new Map();
+let settings = { theme: 'dark' };
+
 
 // --- Funciones de Persistencia ---
 // Función para cargar las notas desde el archivo JSON
@@ -22,6 +24,7 @@ function loadNotes() {
             notes = parsed.notes || {};
             trashNotes = parsed.trashNotes || {};
             reminders = parsed.reminders || {};
+            settings = parsed.settings || { theme: 'dark' };
 
             // Asegurar que las propiedades reminder y audioFiles existan en las notas
             for (const noteId in notes) {
@@ -86,7 +89,7 @@ function loadNotes() {
 function saveNotes() {
     try {
         if (dataPath) {
-            const data = { notes, trashNotes, reminders };
+            const data = { notes, trashNotes, reminders, settings };
             fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
         }
     } catch (error) {
@@ -176,6 +179,14 @@ function cancelNotification(id) {
         console.log('Main: No se encontró timeout para id:', id);
     }
 }
+
+ipcMain.handle('settings:get', () => settings);
+ipcMain.on('settings:set', (_e, patch) => {
+  settings = { ...settings, ...patch };
+  saveNotes();
+  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('settings:changed', settings));
+});
+
 
 // --- Funciones de Creación de Ventanas ---
 
