@@ -322,6 +322,18 @@ function main() {
         saveNotes();
         BrowserWindow.getAllWindows().forEach(win => win.webContents.send('reminder-updated', reminder));
         console.log('Main: Recordatorio guardado y notificado a todas las ventanas');
+        
+        // Schedule the notification for the reminder
+        const reminderTime = new Date(reminder.reminderTime);
+        if (reminderTime > new Date()) {
+            scheduleNotification({
+                id: reminder.id,
+                when: reminder.reminderTime,
+                title: `Recordatorio: ${reminder.title}`,
+                body: reminder.description || 'Sin descripción',
+                icon: undefined
+            });
+        }
     });
     ipcMain.on('delete-reminder', (event, reminderId) => {
         if (reminders[reminderId]) {
