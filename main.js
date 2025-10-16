@@ -373,50 +373,89 @@ function main() {
                 console.log('Directorio de audio creado:', audioDir);
             }
 
-            // Generar nombre único para el archivo
-            const fileName = `audio-${Date.now()}.webm`;
-            const filePath = path.join(audioDir, fileName);
+                    // Generar nombre único para el archivo (intentamos inferir extensión)
+                    let mimeType = 'audio/webm';
+                    let fileExtension = '.webm';
 
-            console.log('Ruta completa del archivo:', filePath);
+                    // Intentar detectar tipo por contenido mínimo (fallback básico)
+                    try {
+                        const header = Buffer.from(audioArrayBuffer).slice(0, 12).toString('hex');
+                        // webm/ogg/mp4 detection is complex; fallback to webm
+                        if (header.includes('1a45dfa3')) { // EBML => likely webm/mkv
+                            mimeType = 'audio/webm';
+                            fileExtension = '.webm';
+                        }
+                    } catch (e) {
+                        // ignore detection errors
+                    }
 
-            // Convertir ArrayBuffer a Buffer de Node.js
-            const buffer = Buffer.from(audioArrayBuffer);
+                    const fileName = `audio-${Date.now()}${fileExtension}`;
+                    const filePath = path.join(audioDir, fileName);
 
-            fs.writeFile(filePath, buffer, (err) => {
-                if (err) {
-                    console.error('Error al guardar el archivo de audio:', err);
-                    event.sender.send('audio-save-error', err.message);
-                } else {
-                    console.log('Audio guardado exitosamente en:', filePath);
+                    // Convertir ArrayBuffer a Buffer de Node.js
+                    const buffer = Buffer.from(audioArrayBuffer);
 
-                    // Crear una nueva nota con el audio
-                    const newNote = {
-                        id: `note-${Date.now()}`,
-                        title: 'Nota de Audio',
-                        content: `Audio grabado el ${new Date().toLocaleString()}`,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        isPinned: false,
-                        reminder: null,
-                        audioFiles: [{
-                            fileName: fileName,
-                            filePath: filePath,
-                            recordedAt: new Date().toISOString(),
-                            duration: null // Podríamos calcular la duración más tarde
-                        }]
-                    };
+                    fs.writeFile(filePath, buffer, (err) => {
+                        if (err) {
+                            console.error('Error al guardar el archivo de audio:', err);
+                            event.sender.send('audio-save-error', err.message);
+                        } else {
+                            console.log('Audio guardado exitosamente en:', filePath);
 
-                    notes[newNote.id] = newNote;
-                    saveNotes();
+                            // Calcular estadísticas del archivo
+                            const fileSizeMB = (buffer.length / (1024 * 1024)).toFixed(2);
+                            // Estimación aproximada de duración basada en bitrate (si disponible)
+                            let duration = null;
+                            const assumedKbps = 128; // fallback
+                            try {
+                                duration = Math.round((buffer.length * 8) / (assumedKbps * 1000));
+                                duration = '~' + duration + 's';
+                            } catch (e) {
+                                duration = null;
+                            }
 
-                    // Notificar a todas las ventanas
-                    BrowserWindow.getAllWindows().forEach(win => {
-                        win.webContents.send('note-updated', newNote);
+                            const newNote = {
+                                id: `note-${Date.now()}`,
+                                title: `Nota de Audio ${new Date().toLocaleString()}`,
+                                content: '', // Mantener el contenido vacío para que no muestre metadata en el cuerpo
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString(),
+                                isPinned: false,
+                                reminder: null,
+                                audioFiles: [{
+                                    fileName: fileName,
+                                    filePath: filePath,
+                                    recordedAt: new Date().toISOString(),
+                                    duration: duration,
+                                    fileSize: fileSizeMB + ' MB',
+                                    mimeType: mimeType
+                                }]
+                            };
+
+                            notes[newNote.id] = newNote;
+                            saveNotes();
+
+                            // Notificar a todas las ventanas
+                            BrowserWindow.getAllWindows().forEach(win => {
+                                win.webContents.send('note-updated', newNote);
+                            });
+
+                            event.sender.send('audio-note-created', newNote);
+
+                            // Mostrar notificación de éxito
+                            try {
+                                if (Notification) {
+                                    new Notification({
+                                        title: 'Grabación Guardada',
+                                        body: `Audio guardado: ${fileSizeMB} MB`,
+                                        silent: true
+                                    }).show();
+                                }
+                            } catch (nerr) {
+                                console.warn('No se pudo mostrar notificación nativa:', nerr);
+                            }
+                        }
                     });
-
-                    event.sender.send('audio-note-created', newNote);
-                }
-            });
         } catch (error) {
             console.error('Error en save-audio:', error);
             event.sender.send('audio-save-error', error.message);
@@ -438,50 +477,60 @@ function main() {
         }
     });
 
-    ipcMain.on('save-drawing', async (event, { dataURL, noteId, title }) => {
-        try {
-            const fs = require('fs');
-            const path = require('path');
+        ipcMain.on('save-drawing', async (event, { dataURL, noteId, title }) => {
+                // Log para debugging
+                console.log(' Main: Iniciando guardado de dibujo...');
+                console.log('   - noteId:', noteId);
+                console.log('   - title:', title);
+                console.log('   - dataURL length:', dataURL?.length);
+        
+                // Verificar si ya hay un guardado en progreso para esta nota
+                if (noteId && notes[noteId]?.drawingPath) {
+                    console.log('ℹ  Actualizando dibujo existente:', noteId);
+                }
+        
+                try {
+                    const fs = require('fs');
+                    const path = require('path');
 
-            // Crear directorio para dibujos si no existe
-            const userDataPath = app.getPath('userData');
-            const drawingDir = path.join(userDataPath, 'drawings');
+                    // Crear directorio para dibujos si no existe
+                    const userDataPath = app.getPath('userData');
+                    const drawingDir = path.join(userDataPath, 'drawings');
 
-            console.log('Directorio de usuario:', userDataPath);
-            console.log('Directorio de dibujos:', drawingDir);
+                    if (!fs.existsSync(drawingDir)) {
+                        fs.mkdirSync(drawingDir, { recursive: true });
+                        console.log('Directorio de dibujos creado:', drawingDir);
+                    }
 
-            if (!fs.existsSync(drawingDir)) {
-                fs.mkdirSync(drawingDir, { recursive: true });
-                console.log('Directorio de dibujos creado:', drawingDir);
-            }
+                    // Generar nombre único para el archivo
+                    const timestamp = Date.now();
+                    const fileName = `drawing-${timestamp}.png`;
+                    const filePath = path.join(drawingDir, fileName);
 
-            // Generar nombre único para el archivo
-            const fileName = `drawing-${Date.now()}.png`;
-            const filePath = path.join(drawingDir, fileName);
+                    console.log('Guardando archivo en:', filePath);
 
-            console.log('Ruta completa del archivo:', filePath);
+                    // Convertir dataURL a Buffer
+                    const base64Data = dataURL.replace(/^data:image\/png;base64,/, '');
+                    const buffer = Buffer.from(base64Data, 'base64');
 
-            // Convertir dataURL a Buffer
-            const base64Data = dataURL.replace(/^data:image\/png;base64,/, '');
-            const buffer = Buffer.from(base64Data, 'base64');
-
-            fs.writeFile(filePath, buffer, (err) => {
-                if (err) {
-                    console.error('Error al guardar el archivo de dibujo:', err);
-                    event.sender.send('drawing-save-error', err.message);
-                } else {
-                    console.log('Dibujo guardado exitosamente en:', filePath);
+                    // Guardar el archivo
+                    await fs.promises.writeFile(filePath, buffer);
+                    console.log(' Archivo de dibujo guardado exitosamente');
 
                     let note;
                     if (noteId && notes[noteId]) {
-                        // Update existing note
+                        // ACTUALIZAR nota existente - eliminar duplicados
                         note = notes[noteId];
                         note.drawingPath = filePath;
                         note.updatedAt = new Date().toISOString();
+                        note.title = title || note.title || 'Dibujo actualizado';
+            
+                        console.log('Dibujo actualizado en nota existente:', noteId);
                     } else {
-                        // Create new drawing note
+                        // CREAR nueva nota - asegurar ID único
+                        const newNoteId = `note-${timestamp}`;
                         note = {
-                            id: `note-${Date.now()}`,
+                            id: newNoteId,
                             title: title || 'Dibujo',
                             content: '',
                             createdAt: new Date().toISOString(),
@@ -491,24 +540,35 @@ function main() {
                             audioFiles: [],
                             drawingPath: filePath,
                         };
-                        notes[note.id] = note;
+                        notes[newNoteId] = note;
+            
+                        console.log(' Nueva nota de dibujo creada:', newNoteId);
                     }
 
+                    // Guardar una sola vez
                     saveNotes();
+                    console.log(' Notas guardadas en disco');
 
-                    // Notificar a todas las ventanas
-                    BrowserWindow.getAllWindows().forEach(win => {
+                    // Enviar evento UNA sola vez a todas las ventanas
+                    const windows = BrowserWindow.getAllWindows();
+                    console.log(`Enviando evento a ${windows.length} ventanas`);
+          
+                    windows.forEach(win => {
                         win.webContents.send('note-updated', note);
                     });
 
+                    // Enviar evento de dibujo guardado SOLO al remitente original
                     event.sender.send('drawing-saved', note);
+          
+                    console.log(' Proceso de guardado de dibujo completado');
+
+                } catch (error) {
+                    console.error(' Error en save-drawing:', error);
+          
+                    // Enviar error solo al remitente original
+                    event.sender.send('drawing-save-error', error.message);
                 }
             });
-        } catch (error) {
-            console.error('Error en save-drawing:', error);
-            event.sender.send('drawing-save-error', error.message);
-        }
-    });
 
     // --- IPC Handlers para Notificaciones ---
     ipcMain.handle('notify:schedule', (event, payload) => {

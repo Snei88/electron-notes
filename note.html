@@ -54,23 +54,54 @@
       <button id="toolbar-toggle" type="button" class="material-icons" title="Mostrar/Ocultar opciones" aria-expanded="false" aria-controls="toolbar-opts">expand_more</button>
 
       <div id="toolbar-opts" class="toolbar-options">
-        <input id="color-text"   type="color" title="Color de texto" aria-label="Color de texto" />
-        <input id="color-hilite" type="color" title="Resaltado"      aria-label="Color de resaltado" />
+        <!-- SISTEMA MEJORADO DE COLORES CON TOOLTIPS -->
+        <div class="toolbar-section">
+          <div class="color-control-group">
+            <!-- Selector de color de fondo -->
+            <div class="color-control" data-tooltip="Cambia el color de fondo de toda la nota">
+              <label class="color-label">
+                <span class="material-symbols-outlined">format_paint</span>
+                Fondo
+                <span class="color-mode-indicator future">(futuro)</span>
+              </label>
+              <div class="color-input-group">
+                <input type="color" id="background-color-picker" class="color-picker" value="#2c2c2c">
+                <button id="reset-background-color" class="color-reset-btn" title="Color predeterminado">
+                  <span class="material-symbols-outlined">restore</span>
+                </button>
+              </div>
+            </div>
 
-        <!-- Color de la nota -->
-        <div class="note-colors" aria-label="Colores de nota">
-          <button class="color-btn" type="button" data-color="#FFFFFF" title="Blanco"         aria-label="Blanco"></button>
-          <button class="color-btn" type="button" data-color="#000000" title="Negro"          aria-label="Negro"></button>
-          <button class="color-btn" type="button" data-color="#FFB3BA" title="Rosa pastel"    aria-label="Rosa pastel"></button>
-          <button class="color-btn" type="button" data-color="#FFDFBA" title="Naranja pastel" aria-label="Naranja pastel"></button>
-          <button class="color-btn" type="button" data-color="#FFFFBA" title="Amarillo pastel"aria-label="Amarillo pastel"></button>
-          <button class="color-btn" type="button" data-color="#BAFFBA" title="Verde pastel"   aria-label="Verde pastel"></button>
-          <button class="color-btn" type="button" data-color="#BAE1FF" title="Azul pastel"    aria-label="Azul pastel"></button>
-          <button class="color-btn" type="button" data-color="#D1BAFF" title="Morado pastel"  aria-label="Morado pastel"></button>
-          <button class="color-btn" type="button" data-color="#FFBAE1" title="Rosa claro"     aria-label="Rosa claro"></button>
-          <button class="color-btn" type="button" data-color="#BAFFD1" title="Verde menta"    aria-label="Verde menta"></button>
-          <button class="color-btn" type="button" data-color="#FFD1BA" title="Melocotón"      aria-label="Melocotón"></button>
-          <button class="color-btn" type="button" data-color="#E1BAFF" title="Lavanda"        aria-label="Lavanda"></button>
+            <!-- Selector de color de texto -->
+            <div class="color-control" data-tooltip="Aplica a texto seleccionado o al texto futuro">
+              <label class="color-label">
+                <span class="material-symbols-outlined">format_color_text</span>
+                Texto
+                <span class="color-mode-indicator future">(futuro)</span>
+              </label>
+              <div class="color-input-group">
+                <input type="color" id="text-color-picker" class="color-picker" value="#ffffff">
+                <button id="reset-text-color" class="color-reset-btn" title="Color predeterminado">
+                  <span class="material-symbols-outlined">format_color_reset</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Selector de color de resaltado -->
+            <div class="color-control" data-tooltip="Aplica a texto seleccionado">
+              <label class="color-label">
+                <span class="material-symbols-outlined">highlight</span>
+                Resaltar
+                <span class="color-mode-indicator future">(futuro)</span>
+              </label>
+              <div class="color-input-group">
+                <input type="color" id="highlight-color-picker" class="color-picker" value="#ffff00">
+                <button id="reset-highlight-color" class="color-reset-btn" title="Quitar resaltado">
+                  <span class="material-symbols-outlined">highlight_off</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Listas / indentación -->
@@ -127,7 +158,10 @@
 
     <!-- Audio Player Section -->
     <div id="audio-player-section" class="audio-player-section hidden" aria-hidden="true">
-
+      <div class="audio-section-header">
+        <span class="material-symbols-outlined text-lg">mic</span>
+        <h3 class="text-sm font-semibold">Grabaciones de Audio</h3>
+      </div>
       <div id="audio-files-list" class="audio-files-list">
         <!-- Se llena dinámicamente -->
       </div>

@@ -3,6 +3,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const $ = (id) => document.getElementById(id);
 
+  // --- Sistema de notificaciones flotantes ---
+  function showToast(message, type = 'info', duration = 2500) {
+    const toast = $('app-toast');
+    const msgEl = $('app-toast-message');
+    const iconEl = $('app-toast-icon');
+    if (!toast || !msgEl || !iconEl) return;
+
+    // Configura estilo según tipo
+    const colors = {
+      info:   ['#3b82f6', 'info'],
+      success:['#10b981', 'check_circle'],
+      warn:   ['#f59e0b', 'warning'],
+      error:  ['#ef4444', 'error']
+    };
+    const [color, icon] = colors[type] || colors.info;
+    iconEl.textContent = icon;
+    iconEl.style.color = color;
+    msgEl.textContent = message;
+
+    toast.style.opacity = '1';
+    toast.style.pointerEvents = 'auto';
+
+    clearTimeout(toast._hideTimeout);
+    toast._hideTimeout = setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.pointerEvents = 'none';
+    }, duration);
+  }
+
   const notesTbody = $('notes-tbody');
   const searchInput = $('search-input');
 
@@ -96,6 +125,355 @@ document.addEventListener('DOMContentLoaded', async () => {
   let mediaRecorder;
   let audioChunks = [];
   let isRecording = false;
+  let audioInputDevices = [];
+  let selectedAudioDeviceId = '';
+  let currentStream = null;
+  let audioContext = null;
+  let analyserNode = null;
+  let audioLevelInterval = null;
+  
+  // ===== SISTEMA DE MODALES PERSONALIZADOS =====
+
+  class ModalSystem {
+    constructor() {
+      this.overlay = document.getElementById('custom-modal-overlay');
+      this.modal = document.getElementById('custom-modal');
+      this.toastContainer = document.getElementById('toast-container') || this._ensureToastContainer();
+      this.setupEventListeners();
+    }
+
+    _ensureToastContainer() {
+      let el = document.getElementById('toast-container');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'toast-container';
+        el.style.position = 'fixed';
+        el.style.bottom = '16px';
+        el.style.right = '16px';
+        el.style.zIndex = '99999';
+        document.body.appendChild(el);
+      }
+      return el;
+    }
+
+    setupEventListeners() {
+      if (this.overlay) {
+        this.overlay.addEventListener('click', (e) => {
+          if (e.target === this.overlay) this.closeModal();
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.overlay && !this.overlay.classList.contains('hidden')) {
+          this.closeModal();
+        }
+      });
+    }
+
+    async showConfirm(options = {}) {
+      return new Promise((resolve) => {
+        const {
+          title = 'Confirmar acción',
+          message = '¿Estás seguro de que quieres realizar esta acción?',
+          type = 'warning',
+          confirmText = 'Confirmar',
+          cancelText = 'Cancelar',
+          danger = false
+        } = options;
+
+        const modalClass = danger ? 'modal-danger' :
+                          type === 'warning' ? 'modal-warning' :
+                          type === 'success' ? 'modal-success' : 'modal-info';
+
+        const iconType = danger ? 'danger' : type;
+        const iconMap = {
+          danger: 'warning',
+          warning: 'warning',
+          success: 'check_circle',
+          info: 'info'
+        };
+
+        if (!this.modal || !this.overlay) {
+          // fallback to native confirm
+          const confirmed = window.confirm(message);
+          resolve(!!confirmed);
+          return;
+        }
+
+        this.modal.innerHTML = `
+          <div class="${modalClass}">
+            <div class="modal-header">
+              <div class="modal-icon ${iconType}">
+                <span class="material-symbols-outlined">${iconMap[iconType]}</span>
+              </div>
+              <h2 class="modal-title">${title}</h2>
+            </div>
+            <div class="modal-content">
+              <p>${message}</p>
+            </div>
+            <div class="modal-actions">
+              <button class="modal-btn modal-btn-secondary" id="modal-cancel">${cancelText}</button>
+              <button class="modal-btn ${danger ? 'modal-btn-danger' : 'modal-btn-primary'}" id="modal-confirm">${confirmText}</button>
+            </div>
+          </div>
+        `;
+
+        this.openModal();
+
+        const confirmBtn = document.getElementById('modal-confirm');
+        const cancelBtn = document.getElementById('modal-cancel');
+
+        const cleanup = () => {
+          confirmBtn?.removeEventListener('click', confirmHandler);
+          cancelBtn?.removeEventListener('click', cancelHandler);
+          this.closeModal();
+        };
+
+        const confirmHandler = () => { cleanup(); resolve(true); };
+        const cancelHandler = () => { cleanup(); resolve(false); };
+
+        confirmBtn?.addEventListener('click', confirmHandler);
+        cancelBtn?.addEventListener('click', cancelHandler);
+        confirmBtn?.focus();
+      });
+    }
+
+    showAlert(options = {}) {
+      return new Promise((resolve) => {
+        const {
+          title = 'Información',
+          message = '',
+          type = 'info',
+          buttonText = 'Aceptar'
+        } = options;
+
+        const modalClass = type === 'warning' ? 'modal-warning' :
+                          type === 'success' ? 'modal-success' : 'modal-info';
+
+        const iconMap = { warning: 'warning', success: 'check_circle', info: 'info' };
+
+        if (!this.modal || !this.overlay) {
+          window.alert(message);
+          resolve(true);
+          return;
+        }
+
+        this.modal.innerHTML = `
+          <div class="${modalClass}">
+            <div class="modal-header">
+              <div class="modal-icon ${type}">
+                <span class="material-symbols-outlined">${iconMap[type]}</span>
+              </div>
+              <h2 class="modal-title">${title}</h2>
+            </div>
+            <div class="modal-content">
+              <p>${message}</p>
+            </div>
+            <div class="modal-actions">
+              <button class="modal-btn modal-btn-primary" id="modal-ok">${buttonText}</button>
+            </div>
+          </div>
+        `;
+
+        this.openModal();
+
+        const okBtn = document.getElementById('modal-ok');
+        const cleanup = () => { okBtn?.removeEventListener('click', okHandler); this.closeModal(); };
+        const okHandler = () => { cleanup(); resolve(true); };
+        okBtn?.addEventListener('click', okHandler);
+        okBtn?.focus();
+      });
+    }
+
+    openModal() {
+      if (!this.overlay || !this.modal) return;
+      this.overlay.classList.remove('hidden');
+      this.modal.classList.remove('scale-95', 'opacity-0');
+      this.modal.offsetHeight; // force reflow
+      this.modal.classList.add('scale-100', 'opacity-100');
+    }
+
+    closeModal() {
+      if (!this.overlay || !this.modal) return;
+      this.modal.classList.add('scale-95', 'opacity-0');
+      this.overlay.classList.add('fade-out');
+      setTimeout(() => {
+        this.overlay.classList.add('hidden');
+        this.overlay.classList.remove('fade-out');
+        this.modal.classList.remove('scale-100', 'opacity-100');
+      }, 200);
+    }
+
+    showToast(options = {}) {
+      const { title = '', message = '', type = 'info', duration = 4000, action = null } = options;
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.style.transform = 'translateX(20px)';
+      toast.style.opacity = '0';
+      toast.style.transition = 'all 0.25s ease';
+      toast.innerHTML = `
+        <div class="toast-icon"><span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info'}</span></div>
+        <div class="toast-content">${title ? `<div class="toast-title">${title}</div>` : ''}<div class="toast-message">${message}</div></div>
+        <button class="toast-close"><span class="material-symbols-outlined">close</span></button>
+      `;
+      this.toastContainer.appendChild(toast);
+      // animate in
+      requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; toast.style.opacity = '1'; });
+
+      const closeToast = () => {
+        toast.style.transform = 'translateX(20px)';
+        toast.style.opacity = '0';
+        setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+      };
+
+      const closeBtn = toast.querySelector('.toast-close');
+      closeBtn?.addEventListener('click', closeToast);
+
+      if (duration > 0) setTimeout(closeToast, duration);
+      if (action) {
+        toast.style.cursor = 'pointer';
+        toast.addEventListener('click', () => { action(); closeToast(); });
+      }
+
+      return closeToast;
+    }
+  }
+
+  // Instancia global del sistema de modales
+  let modalSystem;
+
+  function initModalSystem() {
+    try {
+      modalSystem = new ModalSystem();
+    } catch (err) {
+      console.warn('No se pudo inicializar ModalSystem, se usará fallback', err);
+      modalSystem = null;
+    }
+  }
+
+  // Wrappers
+  async function showConfirm(options) {
+    if (!modalSystem) initModalSystem();
+    if (!modalSystem) return window.confirm(options?.message || '¿Continuar?');
+    return await modalSystem.showConfirm(options);
+  }
+
+  async function showAlert(options) {
+    if (!modalSystem) initModalSystem();
+    if (!modalSystem) { window.alert(options?.message || ''); return true; }
+    return await modalSystem.showAlert(options);
+  }
+
+  function showToast(options) {
+    if (!modalSystem) initModalSystem();
+    if (!modalSystem) { /* fallback simple */
+      const msg = (options && (options.message || options.title)) || '...';
+      const t = document.createElement('div'); t.textContent = msg; document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2000);
+      return () => {};
+    }
+    return modalSystem.showToast(options);
+  }
+  
+  // Presets de calidad de audio
+  const audioQualityPresets = {
+    standard: {
+      sampleRate: 22050,
+      channelCount: 1,
+      audioBitsPerSecond: 64000, // 64 kbps
+      label: 'Estándar (64 kbps)',
+      description: 'Buena relación calidad/tamaño'
+    },
+    good: {
+      sampleRate: 44100,
+      channelCount: 1,
+      audioBitsPerSecond: 96000, // 96 kbps
+      label: 'Buena (96 kbps)',
+      description: 'Calidad mejorada'
+    },
+    high: {
+      sampleRate: 48000,
+      channelCount: 1,
+      audioBitsPerSecond: 128000, // 128 kbps
+      label: 'Alta (128 kbps)',
+      description: 'Calidad superior'
+    },
+    professional: {
+      sampleRate: 48000,
+      channelCount: 2, // Estéreo
+      audioBitsPerSecond: 192000, // 192 kbps
+      label: 'Profesional (192 kbps)',
+      description: 'Máxima calidad - archivos más grandes'
+    }
+  };
+
+  let currentAudioQuality = 'good';
+
+  function setAudioQuality(quality) {
+    if (audioQualityPresets[quality]) {
+      currentAudioQuality = quality;
+      const preset = audioQualityPresets[quality];
+      showToast(`Calidad de audio: ${preset.label}`, 'success');
+      console.log('Calidad de audio establecida:', preset);
+    } else {
+      showToast('Calidad de audio desconocida', 'warn');
+      console.warn('Intento de establecer calidad desconocida:', quality);
+    }
+  }
+
+  function createAudioQualitySelector() {
+    const selector = document.createElement('div');
+    selector.className = 'fixed bottom-32 right-6 bg-gray-800 p-4 rounded-lg shadow-lg z-50 min-w-72';
+    selector.innerHTML = `
+      <h4 class="text-white font-semibold mb-3">Calidad de Grabación</h4>
+      <div class="space-y-2 mb-3">
+        ${Object.entries(audioQualityPresets).map(([key, preset]) => `
+          <label class="flex items-center p-2 rounded cursor-pointer hover:bg-gray-700 ${
+            key === currentAudioQuality ? 'bg-primary-500/20 border border-primary-500/30' : ''
+          }">
+            <input type="radio" name="audio-quality" value="${key}" 
+                   ${key === currentAudioQuality ? 'checked' : ''} 
+                   class="mr-3 text-primary-500">
+            <div>
+              <div class="text-white font-medium">${preset.label}</div>
+              <div class="text-gray-400 text-sm">${preset.description}</div>
+            </div>
+          </label>
+        `).join('')}
+      </div>
+      <div class="flex gap-2">
+        <button id="confirm-quality" class="flex-1 bg-primary-500 text-white rounded p-2 hover:bg-primary-600">Aplicar</button>
+        <button id="cancel-quality" class="flex-1 bg-gray-600 text-white rounded p-2 hover:bg-gray-700">Cancelar</button>
+      </div>
+    `;
+    document.body.appendChild(selector);
+    const confirmBtn = selector.querySelector('#confirm-quality');
+    const cancelBtn = selector.querySelector('#cancel-quality');
+    confirmBtn.addEventListener('click', () => {
+      const selected = selector.querySelector('input[name="audio-quality"]:checked');
+      if (selected) setAudioQuality(selected.value);
+      document.body.removeChild(selector);
+    });
+    cancelBtn.addEventListener('click', () => document.body.removeChild(selector));
+    setTimeout(() => {
+      const closeHandler = (e) => {
+        if (!selector.contains(e.target)) {
+          if (document.body.contains(selector)) document.body.removeChild(selector);
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }, 100);
+  }
+
+  function addAudioQualityButton() {
+    const qualityBtn = document.createElement('button');
+    qualityBtn.innerHTML = '<span class="material-symbols-outlined text-lg">settings</span>';
+    qualityBtn.className = 'fixed bottom-32 right-6 inline-flex items-center justify-center gap-2 w-12 h-12 rounded-full bg-gray-600 text-white font-semibold shadow-lg transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 z-40';
+    qualityBtn.title = 'Configurar calidad de audio';
+    qualityBtn.addEventListener('click', createAudioQualitySelector);
+    document.body.appendChild(qualityBtn);
+  }
 
   // ------- Utilidades -------
   const fmtDate = (date) =>
@@ -192,6 +570,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (!isDrawingView && isPreviewThere) {
       tr.removeChild(firstTh);
     }
+    // If smart-scroll is active, update indicators because the table header changed
+    try { updateScrollState(); } catch (err) { /* noop */ }
   }
 
   // ------- Renderizado de filas -------
@@ -671,34 +1051,74 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // ------- Dibujo: edición -------
+  // Función mejorada para abrir dibujo para edición
   async function openDrawingForEdit(noteId) {
+    if (drawingSaveInProgress) {
+      console.log(' Operación de dibujo en progreso, ignorando apertura');
+      return;
+    }
+    
     const note = notes[noteId];
     if (!note || !note.drawingPath) return;
+    
     currentDrawingNoteId = noteId;
     drawingModal?.classList.remove('hidden');
-    initDrawingCanvas();
+    
+    // Pequeño delay para asegurar que el modal esté visible
+    setTimeout(() => {
+      initDrawingCanvas();
+      
+      // Cargar el dibujo existente
+      if (note.drawingPath) {
+        loadExistingDrawing(note.drawingPath);
+      }
+    }, 50);
+  }
+
+  // Función para cargar dibujo existente
+  async function loadExistingDrawing(drawingPath) {
     try {
-      const dataURL = await window.api.getDrawingData(note.drawingPath);
+      const dataURL = await window.api.getDrawingData(drawingPath);
       const img = new Image();
+      
       img.onload = () => {
-        ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
-        ctx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
-        saveState();
+        if (ctx && drawingCanvas) {
+          // Limpiar el canvas y dibujar la imagen
+          ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+          ctx.drawImage(img, 0, 0, drawingCanvas.width, drawingCanvas.height);
+          
+          // Guardar el estado inicial en el undo stack
+          saveState();
+          
+          console.log(' Dibujo existente cargado correctamente');
+        }
       };
+      
+      img.onerror = (error) => {
+        console.error(' Error al cargar la imagen del dibujo:', error);
+        showToast('Error al cargar el dibujo existente', 'error');
+      };
+      
       img.src = dataURL;
+      
     } catch (err) {
-      console.error('Error al cargar dibujo:', err);
-      alert('Error al cargar el dibujo: ' + (err?.message || err));
+      console.error(' Error en loadExistingDrawing:', err);
+      showToast('Error al cargar el dibujo: ' + (err?.message || err), 'error');
     }
   }
 
   function renderDrawingView(filtered = null) {
     if (!notesTbody) return;
+    console.log(' Renderizando vista de dibujos...');
+
+    // Limpiar completamente
     notesTbody.innerHTML = '';
 
     ensureDrawingHeaderColumn(true);
 
     const allDrawing = Object.values(notes).filter(n => n.drawingPath);
+    console.log(`Dibujos encontrados: ${allDrawing.length}`);
+    
     const list = filtered
       ? allDrawing.filter(n => filtered.some(f => f.id === n.id))
       : allDrawing;
@@ -719,60 +1139,94 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    list.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-
-    list.forEach(async (note) => {
-      const row = document.createElement('tr');
-      row.className = 'hover:bg-gray-800/40 group note-item';
-      row.dataset.id = note.id;
-
-      // Preview
-      const previewCell = document.createElement('td');
-      previewCell.className = 'p-4';
-      const imgEl = document.createElement('img');
-      imgEl.className = 'w-16 h-16 object-cover rounded border border-gray-600';
-      imgEl.alt = 'Vista previa del dibujo';
-      previewCell.appendChild(imgEl);
-
-      try {
-        const dataURL = await window.api.getDrawingData(note.drawingPath);
-        imgEl.src = dataURL;
-      } catch (err) {
-        console.error('Error preview:', err);
+    // Eliminar duplicados por ID antes de renderizar
+    const uniqueDrawings = [];
+    const seenIds = new Set();
+    
+    list.forEach(note => {
+      if (!seenIds.has(note.id)) {
+        seenIds.add(note.id);
+        uniqueDrawings.push(note);
       }
-
-      // Título
-      const titleCell = document.createElement('td');
-      titleCell.className = 'p-4 text-white flex items-center gap-2';
-      const icon = document.createElement('span');
-      icon.className = 'material-symbols-outlined text-blue-400 text-sm flex-shrink-0';
-      icon.textContent = 'brush';
-      const titleText = document.createElement('span');
-      titleText.textContent = note.title || 'Dibujo sin título';
-      titleText.classList.add('truncate', 'max-w-xs');
-      titleCell.title = note.title || 'Dibujo sin título';
-      titleCell.append(icon, titleText);
-      titleCell.addEventListener('click', () => openDrawingForEdit(note.id));
-
-      // Fecha
-      const dateCell = document.createElement('td');
-      dateCell.className = 'p-4 text-gray-400 whitespace-nowrap';
-      dateCell.textContent = formatDateRelativeOrLocal(note.updatedAt);
-
-      // Acciones
-      const actionsCell = document.createElement('td');
-      actionsCell.className = 'p-4 text-right';
-      const actionsDiv = document.createElement('div');
-      actionsDiv.className = 'flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
-
-      const editBtn = createActionButton('edit', 'Editar', 'text-gray-400', 'hover:bg-white/10', () => openDrawingForEdit(note.id));
-      const deleteBtn = createActionButton('delete', 'Eliminar', 'text-red-400', 'hover:bg-red-500/10', () => deleteNote(note.id));
-      actionsDiv.append(editBtn, deleteBtn);
-      actionsCell.appendChild(actionsDiv);
-
-      row.append(previewCell, titleCell, dateCell, actionsCell);
-      notesTbody.appendChild(row);
     });
+    
+    console.log(` Dibujos únicos a renderizar: ${uniqueDrawings.length}`);
+    
+    uniqueDrawings.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    
+    const fragment = document.createDocumentFragment();
+    
+    uniqueDrawings.forEach(async (note) => {
+      const row = createDrawingRow(note);
+      fragment.appendChild(row);
+    });
+    
+    notesTbody.appendChild(fragment);
+    
+    updateScrollState();
+  }
+
+  // Función auxiliar para crear filas de dibujo
+  function createDrawingRow(note) {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-800/40 group note-item';
+    row.dataset.id = note.id;
+
+    // Preview
+    const previewCell = document.createElement('td');
+    previewCell.className = 'p-4';
+    const imgEl = document.createElement('img');
+    imgEl.className = 'w-16 h-16 object-cover rounded border border-gray-600';
+    imgEl.alt = 'Vista previa del dibujo';
+    imgEl.loading = 'lazy';
+    previewCell.appendChild(imgEl);
+
+    // Cargar preview de forma asíncrona
+    loadDrawingPreview(note.drawingPath, imgEl);
+
+    // Título
+    const titleCell = document.createElement('td');
+    titleCell.className = 'p-4 text-white flex items-center gap-2';
+    const icon = document.createElement('span');
+    icon.className = 'material-symbols-outlined text-blue-400 text-sm flex-shrink-0';
+    icon.textContent = 'brush';
+    const titleText = document.createElement('span');
+    titleText.textContent = note.title || 'Dibujo sin título';
+    titleText.classList.add('truncate', 'max-w-xs');
+    titleCell.title = note.title || 'Dibujo sin título';
+    titleCell.append(icon, titleText);
+    titleCell.addEventListener('click', () => openDrawingForEdit(note.id));
+
+    // Fecha
+    const dateCell = document.createElement('td');
+    dateCell.className = 'p-4 text-gray-400 whitespace-nowrap';
+    dateCell.textContent = formatDateRelativeOrLocal(note.updatedAt);
+
+    // Acciones
+    const actionsCell = document.createElement('td');
+    actionsCell.className = 'p-4 text-right';
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200';
+
+    const editBtn = createActionButton('edit', 'Editar', 'text-gray-400', 'hover:bg-white/10', () => openDrawingForEdit(note.id));
+    const deleteBtn = createActionButton('delete', 'Eliminar', 'text-red-400', 'hover:bg-red-500/10', () => deleteNote(note.id));
+    actionsDiv.append(editBtn, deleteBtn);
+    actionsCell.appendChild(actionsDiv);
+
+    row.append(previewCell, titleCell, dateCell, actionsCell);
+    return row;
+  }
+
+  // Función para cargar previews de forma optimizada
+  async function loadDrawingPreview(drawingPath, imgElement) {
+    try {
+      const dataURL = await window.api.getDrawingData(drawingPath);
+      imgElement.src = dataURL;
+    } catch (err) {
+      console.error('Error cargando preview:', err);
+      // Usar placeholder en caso de error
+      imgElement.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjM0Y0QTU3Ii8+CjxwYXRoIGQ9Ik0zMiAyMEMyOC42ODYzIDIwIDI2IDIyLjY4NjMgMjYgMjZDMjYgMjkuMzEzNyAyOC42ODYzIDMyIDMyIDMyQzM1LjMxMzcgMzIgMzggMjkuMzEzNyAzOCAyNkMzOCAyMi42ODYzIDM1LjMxMzcgMjAgMzIgMjBaTTMyIDM2QzI1LjM3MyAzNiAyMCA0MS4zNzMgMjAgNDhINDRDMjQgNDggMjAgNDEuMzczIDIwIDQ4QzIwIDQxLjM3MyAyNS4zNzMgMzYgMzIgMzZaIiBmaWxsPSIjN0Y4QzlCIi8+Cjwvc3ZnPgo=';
+    }
   }
 
   // ------- Notas CRUD -------
@@ -817,12 +1271,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function deleteNote(noteId) {
     if (!noteId) return;
-    if (notes[noteId]) {
-      trashNotes[noteId] = notes[noteId];
-      delete notes[noteId];
-    }
-    window.api.deleteNote(noteId);
-    renderNotesList();
+    showConfirm({
+      title: 'Eliminar Nota',
+      message: '¿Estás seguro de que quieres eliminar esta nota? Se moverá a la papelera.',
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    }).then(confirmed => {
+      if (!confirmed) return;
+      if (notes[noteId]) {
+        trashNotes[noteId] = notes[noteId];
+        delete notes[noteId];
+      }
+      window.api.deleteNote(noteId);
+      renderNotesList();
+      showToast({ title: 'Nota eliminada', message: 'La nota se ha movido a la papelera', type: 'success' });
+    });
   }
 
   function recoverNote(noteId) {
@@ -844,9 +1308,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function deleteReminder(reminderId) {
     if (!reminderId) return;
-    delete reminders[reminderId];
-    window.api.deleteReminder(reminderId);
-    renderNotesList();
+    showConfirm({
+      title: 'Eliminar Recordatorio',
+      message: '¿Estás seguro de que quieres eliminar este recordatorio?',
+      type: 'warning',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar'
+    }).then(confirmed => {
+      if (!confirmed) return;
+      delete reminders[reminderId];
+      window.api.deleteReminder(reminderId);
+      renderNotesList();
+      showToast({ title: 'Recordatorio eliminado', type: 'success' });
+    });
   }
 
   // ------- Menú contextual -------
@@ -899,13 +1373,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const title = (reminderTitleInput?.value || '').trim();
     const description = (reminderDescriptionInput?.value || '').trim();
     const datetime = reminderDatetimeInput?.value || '';
-
-    if (!title) { alert('El título es obligatorio'); reminderTitleInput?.focus(); return; }
-    if (!datetime) { alert('La fecha y hora son obligatorias'); reminderDatetimeInput?.focus(); return; }
+    if (!title) { showAlert({ title: 'Campo requerido', message: 'El título es obligatorio', type: 'warning' }); reminderTitleInput?.focus(); return; }
+    if (!datetime) { showAlert({ title: 'Campo requerido', message: 'La fecha y hora son obligatorias', type: 'warning' }); reminderDatetimeInput?.focus(); return; }
 
     const reminderDate = new Date(datetime);
-    if (isNaN(reminderDate.getTime())) { alert('La fecha y hora no son válidas'); reminderDatetimeInput?.focus(); return; }
-    if (reminderDate <= new Date()) { alert('La fecha del recordatorio debe ser en el futuro'); reminderDatetimeInput?.focus(); return; }
+    if (isNaN(reminderDate.getTime())) { showAlert({ title: 'Fecha inválida', message: 'La fecha y hora no son válidas', type: 'error' }); reminderDatetimeInput?.focus(); return; }
+    if (reminderDate <= new Date()) { showAlert({ title: 'Fecha inválida', message: 'La fecha del recordatorio debe ser en el futuro', type: 'warning' }); reminderDatetimeInput?.focus(); return; }
 
     const newReminder = {
       id: `reminder-${Date.now()}`,
@@ -919,7 +1392,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.api.saveReminder(newReminder);
     renderNotesList();
     if (reminderModal) reminderModal.style.display = 'none';
-    alert(`Recordatorio "${title}" creado para ${reminderDate.toLocaleString('es-CO')}`);
+    showToast({ title: 'Recordatorio creado', message: `"${title}" para ${reminderDate.toLocaleString('es-CO')}`, type: 'success', duration: 5000 });
   });
 
   // ------- Eventos Dibujo -------
@@ -981,31 +1454,197 @@ document.addEventListener('DOMContentLoaded', async () => {
   drawingUndoBtn?.addEventListener('click', undo);
   drawingRedoBtn?.addEventListener('click', redo);
 
+
+
+
+
   // ------- Audio -------
   async function startRecording() {
     try {
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error('getUserMedia no soportado.');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (typeof MediaRecorder === 'undefined') throw new Error('MediaRecorder no soportado por este navegador.');
-      mediaRecorder = new MediaRecorder(stream);
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('getUserMedia no soportado.');
+      }
+      // Usar preset seleccionado
+      const preset = audioQualityPresets[currentAudioQuality] || audioQualityPresets.good;
+      const audioConstraints = {
+        audio: {
+          channelCount: preset.channelCount || 1,
+          sampleRate: preset.sampleRate || 48000,
+          sampleSize: preset.sampleSize || 16,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          advanced: [
+            { channelCount: preset.channelCount || 1 },
+            { sampleRate: preset.sampleRate || 48000 }
+          ]
+        },
+        video: false
+      };
+
+      // Si hay un dispositivo seleccionado, pedir ese deviceId
+      if (selectedAudioDeviceId) {
+        audioConstraints.audio.deviceId = { exact: selectedAudioDeviceId };
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia(audioConstraints);
+      currentStream = stream;
+      
+      if (typeof MediaRecorder === 'undefined') {
+        throw new Error('MediaRecorder no soportado por este navegador.');
+      }
+
+      // Opciones mejoradas para el MediaRecorder, respetando el preset si aplica
+      const options = {
+        mimeType: 'audio/webm;codecs=opus',
+        audioBitsPerSecond: preset.audioBitsPerSecond || 128000
+      };
+
+      // Verificar si el mimeType es soportado
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        console.warn('Opus no soportado, probando otros códecs...');
+        
+        // Probar diferentes códecs en orden de preferencia
+        const codecs = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4',
+          'audio/ogg;codecs=opus'
+        ];
+        
+        for (const codec of codecs) {
+          if (MediaRecorder.isTypeSupported(codec)) {
+            options.mimeType = codec;
+            console.log('Usando códec:', codec);
+            break;
+          }
+        }
+      }
+
+      mediaRecorder = new MediaRecorder(stream, options);
       audioChunks = [];
-      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunks.push(e.data);
+          console.log('Chunk de audio recibido:', e.data.size, 'bytes');
+        }
+      };
+
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunks, { 
+          type: mediaRecorder.mimeType || 'audio/webm' 
+        });
+        
+        // Mostrar información de calidad
+        const duration = (Date.now() - recordingStartTime) / 1000;
+        const sizeMB = (audioBlob.size / (1024 * 1024)).toFixed(2);
+        console.log(`Grabación completada: ${duration}s, ${sizeMB}MB, tipo: ${audioBlob.type}`);
+        
         const arrayBuffer = await audioBlob.arrayBuffer();
         window.api.saveAudio(arrayBuffer);
-        stream.getTracks().forEach(t => t.stop());
+        
+        // Detener todos los tracks del stream
+        if (currentStream) {
+          currentStream.getTracks().forEach(track => {
+            track.stop();
+            console.log('Track detenido:', track.kind, track.label);
+          });
+          currentStream = null;
+        }
+
+        // Detener analizador y contexto de audio
+        try {
+          if (audioLevelInterval) clearInterval(audioLevelInterval);
+          if (analyserNode) analyserNode.disconnect();
+          if (audioContext) {
+            await audioContext.close();
+            audioContext = null;
+          }
+          analyserNode = null;
+        } catch (err) {
+          console.warn('Error cerrando audioContext:', err);
+        }
       };
-      mediaRecorder.start();
+
+      // Iniciar grabación con chunks más pequeños para mejor rendimiento
+      mediaRecorder.start(1000); // Emitir datos cada segundo
       isRecording = true;
+      recordingStartTime = Date.now();
+      
       startRecordingBtn?.classList.add('hidden');
       stopRecordingBtn?.classList.remove('hidden');
       recordingStatus?.classList.remove('hidden');
+
+      // Actualizar estado con información de calidad
+      // Inicializar analizador de nivel de audio
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(stream);
+        analyserNode = audioContext.createAnalyser();
+        analyserNode.fftSize = 2048;
+        source.connect(analyserNode);
+
+        const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+        audioLevelInterval = setInterval(() => {
+          analyserNode.getByteTimeDomainData(dataArray);
+          // calcular RMS
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const v = (dataArray[i] - 128) / 128;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / dataArray.length);
+          const level = Math.min(100, Math.round(rms * 200));
+          const levelEl = document.getElementById('audio-level');
+          if (levelEl) levelEl.textContent = `${level}%`;
+        }, 200);
+      } catch (err) {
+        console.warn('No se pudo inicializar analizador de audio:', err);
+      }
+
+      updateRecordingStatus();
+
     } catch (err) {
       console.error('Error al iniciar grabación:', err);
-      alert('Error al acceder al micrófono. Revisa permisos o compatibilidad.');
+      
+      // Error específico por permisos
+      if (err.name === 'NotAllowedError') {
+        alert('Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en la configuración de tu navegador.');
+      } else if (err.name === 'NotFoundError') {
+        alert('No se encontró ningún micrófono. Conecta un micrófono e intenta nuevamente.');
+      } else if (err.name === 'NotSupportedError') {
+        alert('La configuración de audio solicitada no es compatible con tu dispositivo.');
+      } else {
+        alert('Error al acceder al micrófono: ' + err.message);
+      }
     }
   }
+
+  // Variable para tracking del tiempo de grabación
+  let recordingStartTime = 0;
+
+  function updateRecordingStatus() {
+    if (!isRecording) return;
+    
+    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    const timerEl = document.getElementById('recording-timer');
+    const qualityEl = document.getElementById('recording-quality');
+    const statusEl = document.getElementById('recording-status');
+
+    if (timerEl) timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const preset = audioQualityPresets[currentAudioQuality] || audioQualityPresets.good;
+    const kbps = Math.round((preset.audioBitsPerSecond || 0) / 1000);
+    if (qualityEl) qualityEl.textContent = `Calidad: ${preset.sampleRate / 1000}kHz, ${kbps}kbps (${preset.label})`;
+    if (statusEl && !statusEl.classList.contains('visible')) {
+      statusEl.classList.remove('hidden');
+    }
+
+    setTimeout(updateRecordingStatus, 1000);
+  }
+
 
   function stopRecording() {
     if (mediaRecorder && isRecording) {
@@ -1017,8 +1656,91 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  startRecordingBtn?.addEventListener('click', startRecording);
+  startRecordingBtn?.addEventListener('click', startRecordingWithDevice);
   stopRecordingBtn?.addEventListener('click', stopRecording);
+
+  //escoger microfoono
+
+  async function loadAudioDevices() {
+    try {
+      // Primero necesitamos permisos temporales
+      const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      tempStream.getTracks().forEach(track => track.stop());
+      
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      audioInputDevices = devices.filter(device => 
+        device.kind === 'audioinput'
+      );
+      
+      console.log('Dispositivos de audio encontrados:', audioInputDevices);
+      
+      // Si hay múltiples dispositivos, mostrar selector
+      if (audioInputDevices.length > 1) {
+        createAudioDeviceSelector();
+      }
+    } catch (err) {
+      console.error('Error al cargar dispositivos de audio:', err);
+    }
+  }
+
+  function createAudioDeviceSelector() {
+    // Crear un selector de dispositivos flotante
+    const selector = document.createElement('div');
+    selector.className = 'fixed bottom-24 right-6 bg-gray-800 p-4 rounded-lg shadow-lg z-50 min-w-64';
+    selector.innerHTML = `
+      <h4 class="text-white font-semibold mb-2">Seleccionar micrófono</h4>
+      <select id="audio-device-select" class="w-full bg-gray-700 text-white rounded p-2 mb-3">
+        ${audioInputDevices.map(device => 
+          `<option value="${device.deviceId}">${device.label || 'Micrófono ' + (audioInputDevices.indexOf(device) + 1)}</option>`
+        ).join('')}
+      </select>
+      <div class="flex gap-2">
+        <button id="confirm-device" class="flex-1 bg-primary-500 text-white rounded p-2 hover:bg-primary-600">Confirmar</button>
+        <button id="cancel-device" class="flex-1 bg-gray-600 text-white rounded p-2 hover:bg-gray-700">Cancelar</button>
+      </div>
+    `;
+    
+    document.body.appendChild(selector);
+    
+    const selectEl = selector.querySelector('#audio-device-select');
+    const confirmBtn = selector.querySelector('#confirm-device');
+    const cancelBtn = selector.querySelector('#cancel-device');
+    
+    confirmBtn.addEventListener('click', () => {
+      selectedAudioDeviceId = selectEl.value;
+      const selectedDevice = audioInputDevices.find(d => d.deviceId === selectedAudioDeviceId);
+      document.body.removeChild(selector);
+      showToast(`Micrófono seleccionado: ${selectedDevice?.label || 'Dispositivo por defecto'}`, 'success');
+    });
+    
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(selector);
+    });
+    
+    // Cerrar selector al hacer clic fuera
+    setTimeout(() => {
+      const closeHandler = (e) => {
+        if (!selector.contains(e.target) && e.target !== startRecordingBtn) {
+          document.body.removeChild(selector);
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      document.addEventListener('click', closeHandler);
+    }, 100);
+  }
+
+  //mejora de audio
+  async function startRecordingWithDevice() {
+    // Si tenemos dispositivos y no hay uno seleccionado, mostrar selector
+    if (audioInputDevices.length > 1 && !selectedAudioDeviceId) {
+      await loadAudioDevices();
+      createAudioDeviceSelector();
+      return;
+    }
+    
+    await startRecording();
+  }
+
 
   // ------- Navegación (vistas) -------
   allNotesNav?.addEventListener('click', () => {
@@ -1061,10 +1783,73 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderNotesList(); // delega en renderDrawingView
   });
 
-  emptyTrashFloatingBtn?.addEventListener('click', () => {
-    if (confirm('¿Vaciar la papelera? Esta acción no se puede deshacer.')) {
-      window.api.emptyTrash();
+  // ------- Smart scroll (notes table) -------
+  let notesTableContainer = null;
+  let scrollObserver = null;
+
+  function updateScrollState() {
+    try {
+      if (!notesTableContainer) notesTableContainer = document.getElementById('notes-table-container');
+      if (!notesTableContainer) return;
+      const topIndicator = document.getElementById('scroll-top-indicator');
+      const bottomIndicator = document.getElementById('scroll-bottom-indicator');
+      const { scrollTop, scrollHeight, clientHeight } = notesTableContainer;
+      if (topIndicator) topIndicator.style.display = scrollTop > 10 ? 'block' : 'none';
+      if (bottomIndicator) bottomIndicator.style.display = (scrollTop + clientHeight) < (scrollHeight - 10) ? 'block' : 'none';
+    } catch (err) {
+      console.warn('updateScrollState error:', err);
     }
+  }
+
+  function setupSmartScroll() {
+    notesTableContainer = document.getElementById('notes-table-container');
+    if (!notesTableContainer) return;
+    // Observe scroll and resize events
+    notesTableContainer.addEventListener('scroll', updateScrollState, { passive: true });
+    window.addEventListener('resize', updateScrollState);
+
+    // Also use a MutationObserver to detect content changes that affect scrollHeight
+    try {
+      scrollObserver = new MutationObserver(() => updateScrollState());
+      scrollObserver.observe(notesTableContainer, { childList: true, subtree: true });
+    } catch (err) {
+      // MutationObserver not available? fallback to periodic update
+      notesTableContainer._smartScrollInterval = setInterval(updateScrollState, 500);
+    }
+
+    // Initial update
+    setTimeout(updateScrollState, 50);
+  }
+
+  function cleanupScrollObserver() {
+    if (notesTableContainer) {
+      notesTableContainer.removeEventListener('scroll', updateScrollState);
+      window.removeEventListener('resize', updateScrollState);
+      if (notesTableContainer._smartScrollInterval) {
+        clearInterval(notesTableContainer._smartScrollInterval);
+        notesTableContainer._smartScrollInterval = null;
+      }
+    }
+    if (scrollObserver) {
+      try { scrollObserver.disconnect(); } catch (e) { }
+      scrollObserver = null;
+    }
+  }
+
+  emptyTrashFloatingBtn?.addEventListener('click', () => {
+    showConfirm({
+      title: 'Vaciar Papelera',
+      message: '¿Estás seguro de que quieres vaciar la papelera? Esta acción es irreversible y no se puede deshacer.',
+      type: 'danger',
+      confirmText: 'Vaciar Todo',
+      cancelText: 'Cancelar',
+      danger: true
+    }).then(confirmed => {
+      if (confirmed) {
+        window.api.emptyTrash();
+        showToast({ title: 'Papelera vaciada', message: 'Todas las notas han sido eliminadas permanentemente', type: 'success' });
+      }
+    });
   });
 
   // ------- Búsqueda -------
@@ -1138,22 +1923,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.api.onAudioNoteCreated((note) => {
     notes[note.id] = note;
     renderNotesList();
-    alert(`Nota de audio creada: "${note.title}"`);
+    showToast(`Nota de audio creada: "${note.title}"`, 'success');
   });
 
   window.api.onAudioSaveError((error) => {
-    alert(`Error al guardar la nota de audio:\n${error}`);
+    showToast(`Error al guardar la nota de audio: ${error}`, 'error');
   });
 
-  // Drawing IPC
+  // ===== DRAWING IPC - VERSIÓN CORREGIDA =====
+
+  // Variable para controlar duplicados
+  let drawingSaveInProgress = false;
+
   window.api.onDrawingSaved((note) => {
+    if (drawingSaveInProgress) {
+      console.log(' Intento de guardado duplicado ignorado');
+      return;
+    }
+    
+    drawingSaveInProgress = true;
+    
+    console.log(' Dibujo guardado:', note.id, note.title);
+    
+    // Actualizar el estado de notas
     notes[note.id] = note;
+    
+    // Forzar una sola actualización de la lista
     renderNotesList();
-    alert(`Dibujo guardado: "${note.title}"`);
+    
+    showToast({
+      title: 'Dibujo guardado',
+      message: `"${note.title}"`,
+      type: 'success',
+      duration: 3000
+    });
+    
+    // Resetear el flag después de un delay
+    setTimeout(() => {
+      drawingSaveInProgress = false;
+    }, 1000);
   });
 
   window.api.onDrawingSaveError((error) => {
-    alert(`Error al guardar el dibujo:\n${error}`);
+    drawingSaveInProgress = false;
+    showAlert({
+      title: 'Error al guardar',
+      message: `No se pudo guardar el dibujo:\n${error}`,
+      type: 'error'
+    });
   });
 
   // ------- Theme Listeners -------
@@ -1167,32 +1984,192 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.api.onSettingsChanged((s) => applyTheme(s?.theme || 'dark'));
 
   // ------- Atajos de teclado -------
-  document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key.toLowerCase()) {
-        case 'n':
-          e.preventDefault();
-          createNewNote();
-          break;
-        case 'r': // usar Ctrl+Shift+R para no chocar con recarga
-          if (e.shiftKey) {
-            e.preventDefault();
-            createReminderBtn?.click();
-          }
-          break;
-        case 'd':
-          e.preventDefault();
-          createDrawingBtn?.click();
-          break;
-        case 's':
-          if (currentView === 'drawing' && !drawingModal?.classList.contains('hidden')) {
-            e.preventDefault();
-            saveDrawing();
-          }
-          break;
+  // Busca la sección de atajos de teclado existente y reemplázala o amplíala:
+
+  function setupGlobalKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+      // Ignorar si estamos en un input de búsqueda u otros campos
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement.tagName === 'INPUT' || 
+                            activeElement.tagName === 'TEXTAREA' ||
+                            activeElement.isContentEditable;
+      
+      if (isInputFocused && !activeElement.id?.includes('search')) {
+        return; // No procesar atajos globales cuando se está editando texto
       }
-    }
-  });
+
+      // Ctrl/Cmd + N - Nueva nota
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !e.shiftKey) {
+        e.preventDefault();
+        createNewNote();
+        return;
+      }
+
+      // Ctrl/Cmd + Shift + N - Nueva nota rápida (sin abrir ventana flotante)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n' && e.shiftKey) {
+        e.preventDefault();
+        createQuickNote();
+        return;
+      }
+
+      // Ctrl/Cmd + T - Nueva nota de audio
+      if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+        e.preventDefault();
+        startRecording();
+        return;
+      }
+
+      // Ctrl/Cmd + R - Nuevo recordatorio
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        createReminderBtn?.click();
+        return;
+      }
+
+      // Ctrl/Cmd + D - Nuevo dibujo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        createDrawingBtn?.click();
+        return;
+      }
+
+      // Ctrl/Cmd + F - Buscar (focus en search)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        searchInput?.focus();
+        searchInput?.select();
+        return;
+      }
+
+      // Ctrl/Cmd + L - Limpiar búsqueda
+      if ((e.ctrlKey || e.metaKey) && e.key === 'l' && !e.shiftKey) {
+        e.preventDefault();
+        if (searchInput) {
+          searchInput.value = '';
+          renderNotesList();
+        }
+        return;
+      }
+
+      // Ctrl/Cmd + , - Configuración (podrías implementar esto después)
+      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault();
+        openSettings();
+        return;
+      }
+
+      // Ctrl/Cmd + 1 - Vista de notas
+      if ((e.ctrlKey || e.metaKey) && e.key === '1') {
+        e.preventDefault();
+        allNotesNav?.click();
+        return;
+      }
+
+      // Ctrl/Cmd + 2 - Vista de papelera
+      if ((e.ctrlKey || e.metaKey) && e.key === '2') {
+        e.preventDefault();
+        trashNav?.click();
+        return;
+      }
+
+      // Ctrl/Cmd + 3 - Vista de recordatorios
+      if ((e.ctrlKey || e.metaKey) && e.key === '3') {
+        e.preventDefault();
+        remindersNav?.click();
+        return;
+      }
+
+      // Ctrl/Cmd + 4 - Vista de dibujos
+      if ((e.ctrlKey || e.metaKey) && e.key === '4') {
+        e.preventDefault();
+        drawingNav?.click();
+        return;
+      }
+
+      // Escape - Cerrar modales o limpiar búsqueda
+      if (e.key === 'Escape') {
+        // Cerrar modales abiertos
+        if (reminderModal && reminderModal.style.display === 'block') {
+          reminderModal.style.display = 'none';
+          e.preventDefault();
+          return;
+        }
+        
+        if (drawingModal && !drawingModal.classList.contains('hidden')) {
+          drawingModal.classList.add('hidden');
+          e.preventDefault();
+          return;
+        }
+        
+        // Limpiar búsqueda
+        if (searchInput && searchInput.value) {
+          searchInput.value = '';
+          renderNotesList();
+          e.preventDefault();
+          return;
+        }
+        
+        // Quitar focus de search
+        if (document.activeElement === searchInput) {
+          searchInput.blur();
+          e.preventDefault();
+          return;
+        }
+      }
+
+      // F2 - Renombrar nota seleccionada (si implementas selección)
+      if (e.key === 'F2') {
+        e.preventDefault();
+        renameSelectedNote();
+        return;
+      }
+
+      // Delete - Eliminar nota seleccionada
+      if (e.key === 'Delete' && currentView !== 'trash') {
+        e.preventDefault();
+        deleteSelectedNote();
+        return;
+      }
+    });
+  }
+
+  // Funciones auxiliares para los atajos
+  function createQuickNote() {
+    const now = new Date().toISOString();
+    const newNote = {
+      id: `note-${Date.now()}`,
+      title: 'Nota Rápida',
+      content: `Creada el ${new Date().toLocaleString()}`,
+      createdAt: now,
+      updatedAt: now,
+      isPinned: false,
+      reminder: null,
+      audioFiles: [],
+      drawingPath: null,
+    };
+    
+    notes[newNote.id] = newNote;
+    window.api.saveNote(newNote);
+    renderNotesList();
+    showToast('Nota rápida creada', 'success');
+  }
+
+  function openSettings() {
+    // Implementar un modal de configuración
+    showToast('Configuración - Próximamente', 'info');
+  }
+
+  function renameSelectedNote() {
+    // Implementar lógica para renombrar nota seleccionada
+    // Por ahora, mostramos un mensaje
+    showToast('Selecciona una nota y presiona F2 para renombrar', 'info');
+  }
+
+  function deleteSelectedNote() {
+    // Implementar lógica para eliminar nota seleccionada
+    showToast('Selecciona una nota y presiona Delete para eliminar', 'info');
+  }
+  
 
   // ------- Window Controls -------
   minimizeBtn?.addEventListener('click', () => window.api.minimizeWindow());
@@ -1204,4 +2181,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   ensureImprovedStylesOnce();
   loadInitialNotes();
   updateCreateButtonsVisibility();
+  setupGlobalKeyboardShortcuts();
+  await loadAudioDevices();
+  // UI helpers
+  try { addAudioQualityButton(); } catch (e) { /* optional */ }
+
+  // Smart scroll setup for notes list
+  try { setupSmartScroll(); } catch (e) { console.warn('Smart scroll init failed', e); }
+
+  // Cleanup on unload
+  window.addEventListener('beforeunload', () => {
+    try { cleanupScrollObserver(); } catch (e) { }
+  });
 });

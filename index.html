@@ -51,6 +51,13 @@
       </div>
     </div>
   </div>
+  <!-- Notificación flotante -->
+  <div id="app-toast"
+       class="fixed bottom-8 right-8 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 z-[1000]"
+       role="status" aria-live="polite">
+    <span id="app-toast-icon" class="material-symbols-outlined align-middle mr-2 text-green-400">check_circle</span>
+    <span id="app-toast-message" class="align-middle"></span>
+  </div>
   <div class="flex flex-col md:flex-row min-h-screen">
     <aside class="sidebar w-full md:w-64 bg-gray-900/50 p-4 md:p-6 flex flex-col justify-between">
       <div>
@@ -145,13 +152,26 @@
     </button>
     <div
       id="recording-status"
-      class="fixed bottom-20 right-6 text-center text-sm text-red-400 font-semibold hidden"
+      class="fixed bottom-24 right-6 z-50 px-4 py-3 rounded-lg
+             bg-black/80 text-white text-sm font-semibold
+             backdrop-blur pointer-events-none hidden min-w-48"
+      role="status" aria-live="polite"
     >
-      <span class="material-symbols-outlined text-base align-middle mr-1">radio_button_checked</span>
-      Grabando...
+      <div class="flex items-center mb-2">
+        <span class="material-symbols-outlined text-base align-middle mr-2 text-red-400">radio_button_checked</span>
+        <span class="align-middle">Grabando...</span>
+      </div>
+      <div class="text-xs text-gray-300 space-y-1">
+        <div id="recording-timer">00:00</div>
+        <div id="recording-quality">Calidad: 48kHz, 128kbps</div>
+        <div class="flex items-center mt-2">
+          <div class="w-2 h-2 bg-red-400 rounded-full mr-2 animate-pulse"></div>
+          <div class="text-xs">Nivel de audio: <span id="audio-level">--</span></div>
+        </div>
+      </div>
     </div>
-    <main class="flex-1 p-4 md:p-8">
-      <div class="flex justify-between items-center mb-8">
+    <main class="flex-1 p-4 md:p-8" id="main-content-container">
+      <div class="flex justify-between items-center mb-4">
         <h2 class="text-3xl font-extrabold tracking-tight text-white" id="main-title">Notas</h2>
         <div class="flex items-center gap-4">
           <div class="relative">
@@ -165,7 +185,11 @@
           </div>
         </div>
       </div>
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+
+      <!-- Notes table container: enables independent scrolling for smart-scroll behavior -->
+      <div id="notes-table-container" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-auto" style="max-height: calc(100vh - 220px); position: relative;">
+        <!-- scroll indicators -->
+        <div id="scroll-top-indicator" style="position:sticky;top:0;height:12px;pointer-events:none;background:linear-gradient(to bottom, rgba(0,0,0,0.12), transparent);display:none;z-index:20;"></div>
         <table class="w-full text-left" id="notes-table">
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -178,6 +202,7 @@
             <!-- Notes will be populated here -->
           </tbody>
         </table>
+        <div id="scroll-bottom-indicator" style="position:sticky;bottom:0;height:12px;pointer-events:none;background:linear-gradient(to top, rgba(0,0,0,0.12), transparent);display:none;z-index:20;"></div>
       </div>
     </main>
   </div>
