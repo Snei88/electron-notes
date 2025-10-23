@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus IA - Asistente de Tesis</title>
+    <link rel="stylesheet" href="nexus.css">
+
+</head>
+<body>
+    <div class="header">
+        <a href="../index.html" class="back-button">
+            <svg viewBox="0 0 24 24" class="back-icon">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+            </svg>
+            <span>Volver a Mis Notas</span>
+        </a>
+        <div class="logo">Nexus IA</div>
+        <div class="notification-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+            </svg>
+        </div>
+    </div>
+
+    <div id="welcomeView" class="main-container">
+        <div class="welcome-section">
+            <h1 class="welcome-title">Welcome to Nexus IA</h1>
+            <p class="welcome-subtitle">Ask me anything, or try one of the example prompts below.</p>
+        </div>
+
+        <div class="prompt-cards">
+            <div class="prompt-card" data-prompt="Resume mi tesis en 3 párrafos clave">
+                <div class="prompt-card-title">Resume mi tesis</div>
+                <div class="prompt-card-subtitle">en 3 párrafos clave.</div>
+            </div>
+
+            <div class="prompt-card" data-prompt="¿Qué dice el estado del arte sobre automatización en planeación financiera pública?">
+                <div class="prompt-card-title">Estado del arte</div>
+                <div class="prompt-card-subtitle">sobre automatización financiera.</div>
+            </div>
+
+            <div class="prompt-card" data-prompt="¿Cuáles son las principales metodologías mencionadas en los documentos?">
+                <div class="prompt-card-title">Metodologías</div>
+                <div class="prompt-card-subtitle">encontradas en la investigación.</div>
+            </div>
+
+            <div class="prompt-card" data-prompt="¿Qué autores hablan sobre IA en gestión pública?">
+                <div class="prompt-card-title">Autores clave</div>
+                <div class="prompt-card-subtitle">en IA y gestión pública.</div>
+            </div>
+
+            <div class="prompt-card" data-prompt="Dame sugerencias para mejorar la introducción de mi tesis">
+                <div class="prompt-card-title">Mejorar introducción</div>
+                <div class="prompt-card-subtitle">sugerencias de redacción.</div>
+            </div>
+
+            <div class="prompt-card" data-prompt="Explica los principales hallazgos de la investigación">
+                <div class="prompt-card-title">Hallazgos clave</div>
+                <div class="prompt-card-subtitle">de la investigación doctoral.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="chatView" class="chat-container">
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-controls">
+            <span class="message-count" id="messageCount">0 mensajes en esta sesión</span>
+            <button class="clear-btn" onclick="clearHistory()">🗑️ Limpiar historial</button>
+        </div>
+    </div>
+
+    <div class="input-section">
+        <div class="input-container">
+            <input 
+                type="text" 
+                id="userInput" 
+                placeholder="Ask Nexus IA anything..."
+                autocomplete="off"
+            >
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuración del backend
+        const API_URL = 'http://127.0.0.1:5000/api/chat';
+
+        let messageHistory = [];
+        let isProcessing = false;
+        let isChatActive = false;
+
+        // Cargar historial del localStorage al iniciar
+        window.onload = () => {
+            loadHistory();
+            if (messageHistory.length > 0) {
+                showChatView();
+            }
+            updateMessageCount();
+        };
+
+        // Manejo de Enter para enviar
+        document.getElementById('userInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !isProcessing) {
+                sendMessage();
+            }
+        });
+
+        // Prompt cards clickeables
+        document.querySelectorAll('.prompt-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.getElementById('userInput').value = card.dataset.prompt;
+                sendMessage();
+            });
+        });
+
+        function showChatView() {
+            document.getElementById('welcomeView').style.display = 'none';
+            document.getElementById('chatView').classList.add('active');
+            isChatActive = true;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message || isProcessing) return;
+
+            // Mostrar vista de chat si está en welcome
+            if (!isChatActive) {
+                showChatView();
+            }
+
+            // Añadir mensaje del usuario
+            addMessage(message, 'user');
+            input.value = '';
+            
+            // Deshabilitar input
+            isProcessing = true;
+            updateUIState(true);
+
+            // Mostrar indicador de carga
+            const loadingId = showLoading();
+
+            try {
+                // Llamada al backend
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        question: message,
+                        history: messageHistory
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Remover loading
+                removeLoading(loadingId);
+
+                // Añadir respuesta de la IA
+                addMessage(data.answer, 'ai', data.sources);
+
+                // Guardar en historial
+                messageHistory.push({
+                    role: 'user',
+                    content: message
+                });
+                messageHistory.push({
+                    role: 'model',
+                    content: data.answer
+                });
+
+                saveHistory();
+
+            } catch (error) {
+                console.error('Error:', error);
+                removeLoading(loadingId);
+                addErrorMessage('Error al conectar con el servidor. Verifica que el backend esté en ejecución.');
+            } finally {
+                isProcessing = false;
+                updateUIState(false);
+                updateMessageCount();
+            }
+        }
+
+        function addMessage(text, type, sources = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const label = type === 'user' ? 'You' : 'Nexus IA';
+            
+            let content = `
+                <div class="message-label">${label}</div>
+                <div class="message-content">${escapeHtml(text)}</div>
+            `;
+            
+            if (sources && sources.length > 0) {
+                content += `<div class="message-sources">Fuentes: ${sources.join(', ')}</div>`;
+            }
+            
+            messageDiv.innerHTML = content;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showLoading() {
+            const chatMessages = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            const loadingId = 'loading-' + Date.now();
+            loadingDiv.id = loadingId;
+            loadingDiv.className = 'message ai';
+            loadingDiv.innerHTML = `
+                <div class="message-label">Nexus IA</div>
+                <div class="loading">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            `;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loadingId;
+        }
+
+        function removeLoading(loadingId) {
+            const loadingEl = document.getElementById(loadingId);
+            if (loadingEl) {
+                loadingEl.remove();
+            }
+        }
+
+        function addErrorMessage(text) {
+            const chatMessages = document.getElementById('chatMessages');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = text;
+            chatMessages.appendChild(errorDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function updateUIState(processing) {
+            const sendBtn = document.getElementById('sendBtn');
+            const input = document.getElementById('userInput');
+            
+            sendBtn.disabled = processing;
+            input.disabled = processing;
+            
+            if (processing) {
+                sendBtn.textContent = 'Sending...';
+            } else {
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        function updateMessageCount() {
+            const count = document.querySelectorAll('.message').length;
+            document.getElementById('messageCount').textContent = `${count} mensajes en esta sesión`;
+        }
+
+        function clearHistory() {
+            if (confirm('¿Estás seguro de que quieres limpiar el historial?')) {
+                messageHistory = [];
+                localStorage.removeItem('chatHistory');
+                
+                document.getElementById('chatMessages').innerHTML = '';
+                document.getElementById('chatView').classList.remove('active');
+                document.getElementById('welcomeView').style.display = 'flex';
+                isChatActive = false;
+                
+                updateMessageCount();
+            }
+        }
+
+        function saveHistory() {
+            localStorage.setItem('chatHistory', JSON.stringify(messageHistory));
+        }
+
+        function loadHistory() {
+            const saved = localStorage.getItem('chatHistory');
+            if (saved) {
+                try {
+                    messageHistory = JSON.parse(saved);
+                    
+                    // Reconstruir mensajes visualmente
+                    if (messageHistory.length > 0) {
+                        messageHistory.forEach(msg => {
+                            if (msg.role === 'user') {
+                                addMessage(msg.content, 'user');
+                            } else {
+                                addMessage(msg.content, 'ai');
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error al cargar historial:', e);
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+    </script>
+</body>
+</html>

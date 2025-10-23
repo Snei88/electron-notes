@@ -82,6 +82,7 @@
             <span class="material-symbols-outlined">brush</span>
             <span class="font-extrabold text-lg">Dibujo</span>
           </a>
+
         </nav>
         <div class="flex flex-col gap-2 mt-6">
         <button
@@ -117,7 +118,16 @@
         </button>
         </div>
       </div>
+      <!-- Botón de Nexus AI en la parte inferior -->
+      <div class="mt-auto pt-4">
+        <a href="Nexus Ai/nexus.html" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-800/40 text-gray-400">
+          <span class="material-symbols-outlined">smart_toy</span>
+          <span class="font-extrabold text-lg">Nexus AI</span>
+        </a>
+      </div>
     </aside>
+
+
     <button
       id="start-recording-btn"
       class="fixed bottom-6 right-6 inline-flex items-center justify-center gap-2
@@ -171,6 +181,7 @@
       </div>
     </div>
     <main class="flex-1 p-4 md:p-8" id="main-content-container">
+
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-3xl font-extrabold tracking-tight text-white" id="main-title">Notas</h2>
         <div class="flex items-center gap-4">
@@ -185,6 +196,10 @@
           </div>
         </div>
       </div>
+
+
+
+
 
       <!-- Notes table container: enables independent scrolling for smart-scroll behavior -->
       <div id="notes-table-container" class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-auto" style="max-height: calc(100vh - 220px); position: relative;">
@@ -240,6 +255,8 @@
   </div>
 
   <script src="./renderer.js"></script>
+
+
 
   <!-- Modal para dibujo -->
   <div id="drawing-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden z-50 flex items-center justify-center p-4">
@@ -300,6 +317,117 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+
+  <script>
+    // Vista actual y navegación - DEFINIR TODAS LAS VISTAS
+const views = {
+    notes: document.getElementById('notes-table-container'),
+    trash: document.getElementById('notes-table-container'), // Mismo contenedor para papelera
+    reminders: document.getElementById('notes-table-container'), // Mismo contenedor para recordatorios
+    drawing: document.getElementById('notes-table-container') // Mismo contenedor para dibujos
+};
+
+const navButtons = {
+    notes: document.getElementById('all-notes-nav'),
+    trash: document.getElementById('trash-nav'),
+    reminders: document.getElementById('reminders-nav'),
+    drawing: document.getElementById('drawing-nav')
+};
+
+// Estado global de la aplicación
+let currentView = 'notes';
+
+function showView(viewName) {
+    console.log('Cambiando a vista:', viewName);
+    
+    // Ocultar todas las vistas
+    Object.values(views).forEach(view => {
+        if (view) {
+            view.classList.add('hidden');
+            view.style.display = 'none';
+        }
+    });
+    
+    // Mostrar solo la vista seleccionada
+    if (views[viewName]) {
+        views[viewName].classList.remove('hidden');
+        views[viewName].style.display = '';
+        
+        // Configuración específica para cada vista
+        switch(viewName) {
+
+            case 'trash':
+                document.getElementById('main-title').textContent = 'Papelera';
+                document.getElementById('start-recording-btn').classList.add('hidden');
+                document.getElementById('empty-trash-floating-btn').classList.remove('hidden');
+                break;
+            case 'notes':
+            case 'reminders':
+            case 'drawing':
+                document.getElementById('main-title').textContent = 
+                    viewName === 'notes' ? 'Notas' : 
+                    viewName === 'reminders' ? 'Recordatorios' : 'Dibujos';
+                document.getElementById('start-recording-btn').classList.remove('hidden');
+                document.getElementById('empty-trash-floating-btn').classList.add('hidden');
+                break;
+        }
+    }
+    
+    // Actualizar navegación
+    Object.values(navButtons).forEach(btn => {
+        if (btn) {
+            btn.classList.remove('bg-primary-500/10', 'text-primary-500');
+            btn.classList.add('text-gray-400', 'hover:bg-gray-800/40');
+        }
+    });
+    
+    if (navButtons[viewName]) {
+        navButtons[viewName].classList.remove('text-gray-400', 'hover:bg-gray-800/40');
+        navButtons[viewName].classList.add('bg-primary-500/10', 'text-primary-500');
+    }
+    
+    currentView = viewName;
+}
+
+// Event listeners para navegación
+document.addEventListener('DOMContentLoaded', function() {
+    // Configurar event listeners una vez que el DOM esté listo
+    if (navButtons.notes) {
+        navButtons.notes.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('notes');
+        });
+    }
+    
+    if (navButtons.trash) {
+        navButtons.trash.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('trash');
+        });
+    }
+    
+    if (navButtons.reminders) {
+        navButtons.reminders.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('reminders');
+        });
+    }
+    
+    if (navButtons.drawing) {
+        navButtons.drawing.addEventListener('click', (e) => {
+            e.preventDefault();
+            showView('drawing');
+        });
+    }
+    
+
+    
+    // Inicializar con la vista de notas
+    showView('notes');
+});
+
+
+  </script>
 </body>
 </html>

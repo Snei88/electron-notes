@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -214,7 +214,7 @@ function createMainWindow() {
                     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
                     "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; " +
                     "img-src 'self' data: https:; " +
-                    "connect-src 'self'; " +
+                    "connect-src 'self' http://127.0.0.1:5000; " + // <--- ¡ESTA ES LA LÍNEA QUE HACE EL API!
                     "object-src 'none'; " +
                     "base-uri 'self'; " +
                     "form-action 'self';"

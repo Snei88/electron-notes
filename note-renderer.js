@@ -157,13 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Ctrl/Cmd + Enter - Insertar salto de línea sin formato
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        insertSoftBreak(contentEl);
-        updateContentAndSave();
-        return;
-      }
+      // NOTE: Removed Ctrl/Cmd+Enter soft-break shortcut to ensure only plain Enter
+      // inserts soft breaks. This avoids Alt/Ctrl/Cmd combinations producing
+      // unexpected newlines.
     });
   }
 
@@ -437,7 +433,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const br = document.createElement('br');
     range.insertNode(br);
     
-    // Evita que el cursor quede “atascado” al final del nodo
+    // Evita que el cursor quede "atascado" al final del nodo
     const spacer = document.createTextNode('');
     br.after(spacer);
     
@@ -625,10 +621,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Manejo de Enter en el editor: usar solo Enter para insertar soft break (no requiere Ctrl/Cmd ni Shift)
   contentEl?.addEventListener('keydown', (e) => {
-    // Ignorar combinaciones con Ctrl/Cmd para no interferir con atajos
-    if ((e.ctrlKey || e.metaKey)) return;
-
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Solo manejar Enter sin modificadores (no Ctrl/Meta/Alt/Shift)
+    if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
 
       // Guardar el color actual antes de insertar
@@ -1138,41 +1132,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Inicializar el sistema de colores en la carga
-  async function initialize() {
-    await initTheme();
-    
-    if (!noteId) { 
-      showAlert({
-        title: 'Error',
-        message: 'Nota no encontrada',
-        type: 'error'
-      }).then(() => window.close()); 
-      return; 
-    }
-    
-    const note = await window.api.getNoteData(noteId);
-    if (!note) { 
-      showAlert({
-        title: 'Error',
-        message: 'No se pudo cargar la nota',
-        type: 'error'
-      }).then(() => window.close()); 
-      return; 
-    }
-
-    if (!Array.isArray(note.audioFiles)) note.audioFiles = [];
-    renderNote(note);
-    window.api.preventClose();
-    setToolbarExpanded(false);
-    setupKeyboardShortcuts();
-    
-    // Inicializar sistema de colores simplificado
-    initColorSystem();
-    
-    saveStateToUndoStack();
-  }
-
   // ---------- Accesos directos ----------
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'w') {
@@ -1565,12 +1524,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function saveDrawing() {
     // Asegurarnos de que el canvas y el modal existan en este contexto
     if (typeof drawingCanvas === 'undefined' || !drawingCanvas) {
-      console.log(' saveDrawing: canvas no disponible en este contexto');
+      console.log('⚠️ saveDrawing: canvas no disponible en este contexto');
       return;
     }
 
     if (isSavingDrawing) {
-      console.log(' Guardado de dibujo ya en progreso, ignorando nueva petición');
+      console.log('⏳ Guardado de dibujo ya en progreso, ignorando nueva petición');
       return;
     }
 
@@ -1580,7 +1539,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataURL = drawingCanvas.toDataURL('image/png');
       const title = 'Dibujo ' + new Date().toLocaleString('es-CO');
 
-      console.log(' Iniciando guardado de dibujo...');
+      console.log('💾 Iniciando guardado de dibujo...');
 
       // Deshabilitar temporalmente el botón de guardar si existe
       const saveBtn = document.getElementById('drawing-save-btn');
@@ -1630,7 +1589,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 
-      console.log(' Dibujo guardado exitosamente');
+      console.log('✅ Dibujo guardado exitosamente');
 
       // Cerrar modal y limpiar estado
       if (typeof drawingModal !== 'undefined' && drawingModal) {
@@ -1640,7 +1599,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof currentDrawingNoteId !== 'undefined') currentDrawingNoteId = null;
 
     } catch (error) {
-      console.error(' Error al guardar dibujo:', error);
+      console.error('❌ Error al guardar dibujo:', error);
       try { showToast('Error al guardar el dibujo: ' + (error?.message || error), 'error'); } catch (e) { console.error(e); }
     } finally {
       isSavingDrawing = false;
@@ -1651,7 +1610,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-
 
   // ---------- IPC ----------
   const offNoteDeleted = window.api.onNoteDeleted((deletedId) => {
@@ -1672,9 +1630,26 @@ document.addEventListener('DOMContentLoaded', () => {
     await initTheme();
     initNoteModalSystem();
     
-    if (!noteId) { await showAlert({ title: 'Error', message: 'Nota no encontrada', type: 'error' }); window.close(); return; }
+    if (!noteId) { 
+      await showAlert({ 
+        title: 'Error', 
+        message: 'Nota no encontrada', 
+        type: 'error' 
+      }); 
+      window.close(); 
+      return; 
+    }
+    
     const note = await window.api.getNoteData(noteId);
-    if (!note) { await showAlert({ title: 'Error', message: 'No se pudo cargar la nota', type: 'error' }); window.close(); return; }
+    if (!note) { 
+      await showAlert({ 
+        title: 'Error', 
+        message: 'No se pudo cargar la nota', 
+        type: 'error' 
+      }); 
+      window.close(); 
+      return; 
+    }
 
     if (!Array.isArray(note.audioFiles)) note.audioFiles = [];
     renderNote(note);
@@ -1686,9 +1661,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inicializar sistema de atajos
     setupKeyboardShortcuts();
 
-  // Inicializar sistema de colores
-  initColorSystem();
-  initializeColorSystem();
+    // Inicializar sistema de colores
+    initColorSystem();
     
     // Guardar estado inicial en el undo stack
     saveStateToUndoStack();

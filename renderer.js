@@ -466,13 +466,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     }, 100);
   }
 
-  function addAudioQualityButton() {
+  // Variable global para el botón de calidad de audio
+  let audioQualityButton = null;
+
+function addAudioQualityButton() {
+    // Si el botón ya existe, no crear otro
+    if (document.getElementById('audio-quality-btn')) {
+        audioQualityButton = document.getElementById('audio-quality-btn');
+        return;
+    }
+    
     const qualityBtn = document.createElement('button');
+    qualityBtn.id = 'audio-quality-btn';
     qualityBtn.innerHTML = '<span class="material-symbols-outlined text-lg">settings</span>';
     qualityBtn.className = 'fixed bottom-32 right-6 inline-flex items-center justify-center gap-2 w-12 h-12 rounded-full bg-gray-600 text-white font-semibold shadow-lg transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 z-40';
     qualityBtn.title = 'Configurar calidad de audio';
     qualityBtn.addEventListener('click', createAudioQualitySelector);
     document.body.appendChild(qualityBtn);
+    audioQualityButton = qualityBtn;
+    
+    // Ocultar por defecto - solo se mostrará en la vista de notas
+    hideAudioQualityButton();
+}
+
+  function showAudioQualityButton() {
+    if (audioQualityButton) {
+      audioQualityButton.classList.remove('hidden');
+    }
+  }
+
+  function hideAudioQualityButton() {
+    if (audioQualityButton) {
+      audioQualityButton.classList.add('hidden');
+    }
   }
 
   // ------- Utilidades -------
@@ -1459,6 +1485,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
   // ------- Audio -------
+  // Funciones de control de visibilidad para botones de audio
+  function showAudioRecordingButtons() {
+    if (startRecordingBtn) startRecordingBtn.classList.remove('hidden');
+    if (stopRecordingBtn) stopRecordingBtn.classList.add('hidden');
+  }
+
+  function hideAudioRecordingButtons() {
+    if (startRecordingBtn) startRecordingBtn.classList.add('hidden');
+    if (stopRecordingBtn) stopRecordingBtn.classList.add('hidden');
+  }
+
   async function startRecording() {
     try {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -1749,6 +1786,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     toggleNavActive(allNotesNav, trashNav, remindersNav, drawingNav);
     emptyTrashFloatingBtn?.classList.add('hidden');
     startRecordingBtn?.classList.remove('hidden');
+    showAudioRecordingButtons(); // Mostrar botones de grabación
+    showAudioQualityButton(); // Mostrar el botón en la vista de notas
     updateCreateButtonsVisibility();
     renderNotesList();
   });
@@ -2184,7 +2223,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupGlobalKeyboardShortcuts();
   await loadAudioDevices();
   // UI helpers
-  try { addAudioQualityButton(); } catch (e) { /* optional */ }
+  try { addAudioQualityButton(); hideAudioQualityButton(); } catch (e) { /* optional */ }
+  
 
   // Smart scroll setup for notes list
   try { setupSmartScroll(); } catch (e) { console.warn('Smart scroll init failed', e); }
