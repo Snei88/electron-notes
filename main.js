@@ -236,7 +236,12 @@ function createFloatingNoteWindow(note) {
     }
     const noteWindow = new BrowserWindow({
         width: 350, height: 350, frame: false, transparent: true,
-        webPreferences: { preload: path.join(__dirname, 'preload.js') },
+        webPreferences: { 
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: true,
+            contextIsolation: false,
+            enableRemoteModule: false
+        },
         skipTaskbar: true, show: false,
     });
     noteWindow.loadFile('note.html', { hash: note.id });

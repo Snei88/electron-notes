@@ -546,6 +546,20 @@ h1, h2, h3, th, .window-title, .float-title {
   align-items: center;
   gap: 6px;
 }
+.decoration-select {
+  background: var(--bg-light);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  min-width: 140px;
+}
+
+.decoration-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(56, 224, 123, 0.25);
+}
 
 .color-picker {
   width: 40px;

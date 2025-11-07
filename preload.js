@@ -119,4 +119,9 @@ const api = {
 
 };
 
-contextBridge.exposeInMainWorld('api', Object.freeze(api));
+// Si contextIsolation está deshabilitado, exponer directamente en window
+if (process.contextIsolated) {
+  contextBridge.exposeInMainWorld('api', Object.freeze(api));
+} else {
+  window.api = api;
+}
