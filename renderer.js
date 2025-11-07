@@ -1723,17 +1723,33 @@ function addAudioQualityButton() {
   function createAudioDeviceSelector() {
     // Crear un selector de dispositivos flotante
     const selector = document.createElement('div');
-    selector.className = 'fixed bottom-24 right-6 bg-gray-800 p-4 rounded-lg shadow-lg z-50 min-w-64';
+    
+    // Aplicar estilos según el tema actual
+    const isDarkTheme = document.documentElement.getAttribute('data-theme') !== 'light';
+    
+    if (isDarkTheme) {
+      selector.className = 'audio-device-selector fixed bottom-24 right-6 bg-gray-800 p-4 rounded-lg shadow-lg z-50 min-w-64';
+    } else {
+      selector.className = 'audio-device-selector fixed bottom-24 right-6 bg-white p-4 rounded-lg shadow-lg z-50 min-w-64 border border-gray-300';
+    }
+    
+    const textColor = isDarkTheme ? 'text-white' : 'text-gray-900';
+    const selectBg = isDarkTheme ? 'bg-gray-700' : 'bg-gray-100';
+    const selectText = isDarkTheme ? 'text-white' : 'text-gray-900';
+    const selectBorder = isDarkTheme ? 'border-gray-600' : 'border-gray-300';
+    const cancelBg = isDarkTheme ? 'bg-gray-600 hover:bg-gray-700' : 'bg-gray-300 hover:bg-gray-400';
+    const cancelText = isDarkTheme ? 'text-white' : 'text-gray-900';
+    
     selector.innerHTML = `
-      <h4 class="text-white font-semibold mb-2">Seleccionar micrófono</h4>
-      <select id="audio-device-select" class="w-full bg-gray-700 text-white rounded p-2 mb-3">
+      <h4 class="${textColor} font-semibold mb-2">Seleccionar micrófono</h4>
+      <select id="audio-device-select" class="w-full ${selectBg} ${selectText} rounded p-2 mb-3 border ${selectBorder}">
         ${audioInputDevices.map(device => 
           `<option value="${device.deviceId}">${device.label || 'Micrófono ' + (audioInputDevices.indexOf(device) + 1)}</option>`
         ).join('')}
       </select>
       <div class="flex gap-2">
         <button id="confirm-device" class="flex-1 bg-primary-500 text-white rounded p-2 hover:bg-primary-600">Confirmar</button>
-        <button id="cancel-device" class="flex-1 bg-gray-600 text-white rounded p-2 hover:bg-gray-700">Cancelar</button>
+        <button id="cancel-device" class="flex-1 ${cancelBg} ${cancelText} rounded p-2">Cancelar</button>
       </div>
     `;
     
@@ -1758,7 +1774,9 @@ function addAudioQualityButton() {
     setTimeout(() => {
       const closeHandler = (e) => {
         if (!selector.contains(e.target) && e.target !== startRecordingBtn) {
-          document.body.removeChild(selector);
+          if (document.body.contains(selector)) {
+            document.body.removeChild(selector);
+          }
           document.removeEventListener('click', closeHandler);
         }
       };

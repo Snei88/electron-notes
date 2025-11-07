@@ -349,6 +349,30 @@ document.addEventListener('DOMContentLoaded', () => {
       if ((p === 'color' || p === 'background-color') && okColor) {
         safe.push(`${p}:${v}`);
       }
+      
+      // Permitir text-decoration para tachado, subrayado, etc.
+      if (p === 'text-decoration' || p === 'text-decoration-line') {
+        const okDecoration = /^(none|underline|overline|line-through|inherit|initial|unset)$/i.test(v);
+        if (okDecoration) {
+          safe.push(`${p}:${v}`);
+        }
+      }
+      
+      // Permitir font-weight para negrita
+      if (p === 'font-weight') {
+        const okWeight = /^(normal|bold|bolder|lighter|[1-9]00|inherit|initial|unset)$/i.test(v);
+        if (okWeight) {
+          safe.push(`${p}:${v}`);
+        }
+      }
+      
+      // Permitir font-style para cursiva
+      if (p === 'font-style') {
+        const okStyle = /^(normal|italic|oblique|inherit|initial|unset)$/i.test(v);
+        if (okStyle) {
+          safe.push(`${p}:${v}`);
+        }
+      }
     });
     return safe.join('; ');
   }
@@ -711,8 +735,21 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-cmd]').forEach(btn => {
     btn.addEventListener('click', () => {
       const cmd = btn.getAttribute('data-cmd');
-      document.execCommand(cmd, false, null);
+      
+      // Guardar estado antes de aplicar comando
+      saveStateToUndoStack();
+      
+      // Para strikeThrough y underline, usar métodos mejorados
+      if (cmd === 'strikeThrough') {
+        applyStrikeThrough();
+      } else if (cmd === 'underline') {
+        applyUnderline();
+      } else {
+        document.execCommand(cmd, false, null);
+      }
+      
       contentEl?.focus();
+      
       // tras cambios, sincroniza contenido
       if (currentNote && contentEl) {
         currentNote.content = sanitizeHTML(contentEl.innerHTML);
@@ -720,6 +757,186 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+  
+  // Función mejorada para aplicar/quitar tachado
+  function applyStrikeThrough() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    if (range.toString().length === 0) return;
+    
+    // Guardar posición de inicio y fin
+    const startContainer = range.startContainer;
+    const startOffset = range.startOffset;
+    const endContainer = range.endContainer;
+    const endOffset = range.endOffset;
+    
+    // Obtener el contenedor común
+    const commonAncestor = range.commonAncestorContainer;
+    const parentElement = commonAncestor.nodeType === Node.TEXT_NODE ? commonAncestor.parentElement : commonAncestor;
+    
+    // Verificar si ya tiene tachado
+    const hasStrike = checkIfHasDecoration(parentElement, 'line-through');
+    
+    if (hasStrike) {
+      // Quitar tachado usando execCommand con styleWithCSS
+      document.execCommand('styleWithCSS', false, true);
+      
+      // Crear un span temporal para remover el estilo
+      const tempSpan = document.createElement('span');
+      tempSpan.style.textDecoration = 'none';
+      
+      const fragment = range.extractContents();
+      tempSpan.appendChild(fragment);
+      range.insertNode(tempSpan);
+      
+      // Unwrap el span y limpiar decoraciones
+      cleanDecorationFromElement(tempSpan, 'line-through');
+      
+    } else {
+      // Aplicar tachado
+      document.execCommand('styleWithCSS', false, true);
+      
+      const span = document.createElement('span');
+      const existingDeco = getComputedStyle(parentElement).textDecoration || '';
+      const decoList = existingDeco.split(' ').filter(d => d && d !== 'none' && d !== 'line-through');
+      decoList.push('line-through');
+      span.style.textDecoration = decoList.join(' ');
+      
+      const fragment = range.extractContents();
+      span.appendChild(fragment);
+      range.insertNode(span);
+    }
+    
+    // Restaurar selección
+    try {
+      const newRange = document.createRange();
+      newRange.setStart(startContainer, startOffset);
+      newRange.setEnd(endContainer, endOffset);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    } catch (e) {
+      // Si falla, al menos mantener el foco
+      contentEl?.focus();
+    }
+    
+    updateContentAndSave();
+  }
+  
+  // Función mejorada para aplicar/quitar subrayado
+  function applyUnderline() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    if (range.toString().length === 0) return;
+    
+    // Guardar posición de inicio y fin
+    const startContainer = range.startContainer;
+    const startOffset = range.startOffset;
+    const endContainer = range.endContainer;
+    const endOffset = range.endOffset;
+    
+    // Obtener el contenedor común
+    const commonAncestor = range.commonAncestorContainer;
+    const parentElement = commonAncestor.nodeType === Node.TEXT_NODE ? commonAncestor.parentElement : commonAncestor;
+    
+    // Verificar si ya tiene subrayado
+    const hasUnderline = checkIfHasDecoration(parentElement, 'underline');
+    
+    if (hasUnderline) {
+      // Quitar subrayado
+      document.execCommand('styleWithCSS', false, true);
+      
+      const tempSpan = document.createElement('span');
+      tempSpan.style.textDecoration = 'none';
+      
+      const fragment = range.extractContents();
+      tempSpan.appendChild(fragment);
+      range.insertNode(tempSpan);
+      
+      // Unwrap el span y limpiar decoraciones
+      cleanDecorationFromElement(tempSpan, 'underline');
+      
+    } else {
+      // Aplicar subrayado
+      document.execCommand('styleWithCSS', false, true);
+      
+      const span = document.createElement('span');
+      const existingDeco = getComputedStyle(parentElement).textDecoration || '';
+      const decoList = existingDeco.split(' ').filter(d => d && d !== 'none' && d !== 'underline');
+      decoList.push('underline');
+      span.style.textDecoration = decoList.join(' ');
+      
+      const fragment = range.extractContents();
+      span.appendChild(fragment);
+      range.insertNode(span);
+    }
+    
+    // Restaurar selección
+    try {
+      const newRange = document.createRange();
+      newRange.setStart(startContainer, startOffset);
+      newRange.setEnd(endContainer, endOffset);
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    } catch (e) {
+      contentEl?.focus();
+    }
+    
+    updateContentAndSave();
+  }
+  
+  // Verificar si un elemento tiene una decoración específica
+  function checkIfHasDecoration(element, decoration) {
+    if (!element) return false;
+    
+    // Verificar el elemento actual
+    const style = element.style.textDecoration || '';
+    if (style.includes(decoration)) return true;
+    
+    // Verificar elementos específicos
+    if (decoration === 'line-through' && (element.nodeName === 'S' || element.nodeName === 'STRIKE')) {
+      return true;
+    }
+    if (decoration === 'underline' && element.nodeName === 'U') {
+      return true;
+    }
+    
+    // Verificar computed style
+    const computed = getComputedStyle(element).textDecoration || '';
+    return computed.includes(decoration);
+  }
+  
+  // Limpiar decoración de un elemento y sus hijos
+  function cleanDecorationFromElement(element, decoration) {
+    // Procesar el elemento actual
+    if (element.style && element.style.textDecoration) {
+      const decorations = element.style.textDecoration.split(' ').filter(d => 
+        d && d !== decoration && d !== 'none'
+      );
+      
+      if (decorations.length > 0) {
+        element.style.textDecoration = decorations.join(' ');
+      } else {
+        element.style.removeProperty('text-decoration');
+      }
+    }
+    
+    // Procesar hijos
+    Array.from(element.children).forEach(child => {
+      cleanDecorationFromElement(child, decoration);
+    });
+    
+    // Si el elemento quedó sin estilos, unwrap
+    if (!element.getAttribute('style') || element.getAttribute('style').trim() === '') {
+      while (element.firstChild) {
+        element.parentNode.insertBefore(element.firstChild, element);
+      }
+      element.remove();
+    }
+  }
 
   fontNameSelect?.addEventListener('change', () => {
     document.execCommand('fontName', false, fontNameSelect.value);
