@@ -331,6 +331,20 @@ function main() {
                 break;
         }
     });
+    
+    // Handlers para modo Word
+    ipcMain.on('expand-note-window', (event, noteId) => {
+        const window = floatingWindows.get(noteId);
+        if (!window) return;
+        window.setBounds({ width: 900, height: 700 });
+        window.center();
+    });
+    
+    ipcMain.on('restore-note-window', (event, noteId) => {
+        const window = floatingWindows.get(noteId);
+        if (!window) return;
+        window.setBounds({ width: 350, height: 350 });
+    });
     ipcMain.on('save-reminder', (event, reminder) => {
         console.log('Main: Guardando recordatorio:', reminder);
         reminders[reminder.id] = reminder;

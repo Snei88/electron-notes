@@ -349,6 +349,39 @@ h1, h2, h3, th, .window-title, .float-title {
   background-color: transparent;
 }
 
+/* Modo Word - Ventana expandida */
+.float-note-container.word-mode {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  border-radius: 0 !important;
+}
+
+.float-note-container.word-mode .float-content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 60px;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.float-note-container.word-mode .custom-title-bar {
+  padding: 12px 20px;
+}
+
+.float-note-container.word-mode .float-toolbar {
+  padding: 12px 20px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.float-note-container.word-mode .toolbar-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
 .float-note-container {
   background-color: var(--bg-medium);
   border-radius: 8px;
@@ -464,8 +497,111 @@ h1, h2, h3, th, .window-title, .float-title {
 .float-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px 6px;
+  background-color: var(--bg-dark);
+  border-bottom: 1px solid var(--border-color);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+  max-height: 32px;
+}
+
+.float-toolbar::-webkit-scrollbar {
+  height: 3px;
+}
+
+.float-toolbar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.float-toolbar .toolbar-basic {
+  display: flex;
+  gap: 1px;
+  padding-right: 4px;
+  border-right: 1px solid var(--border-color);
+  margin-right: 4px;
+}
+
+.float-toolbar .toolbar-options {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.float-toolbar .toolbar-section {
+  display: flex;
+  gap: 2px;
+  padding-right: 4px;
+  border-right: 1px solid var(--border-color);
+  margin-right: 4px;
+}
+
+.float-toolbar .color-control-group {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+}
+
+.float-toolbar .color-control {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  min-width: auto;
+}
+
+.float-toolbar .color-label {
+  display: none;
+}
+
+.float-toolbar .color-input-group {
+  display: flex;
+  gap: 1px;
+}
+
+.float-toolbar .color-picker {
+  width: 24px;
+  height: 24px;
+  border-width: 1px;
+}
+
+.float-toolbar .color-reset-btn {
+  width: 20px;
+  height: 20px;
+  padding: 2px;
+}
+
+.float-toolbar .color-reset-btn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.float-toolbar .decoration-select {
+  min-width: 70px;
+  max-width: 70px;
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  height: 24px;
+}
+
+.float-toolbar select {
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  min-width: 60px;
+  max-width: 70px;
+  height: 24px;
+}
+
+.float-toolbar button.material-icons {
+  font-size: 16px;
+  padding: 3px;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .float-toolbar.collapsed .toolbar-options {
@@ -476,10 +612,14 @@ h1, h2, h3, th, .window-title, .float-title {
   background: none;
   border: none;
   color: var(--text-light);
-  font-size: 1.5rem;
+  font-size: 16px;
   cursor: pointer;
-  padding: 4px;
-  margin-left: auto;
+  padding: 3px;
+  margin-left: 4px;
+  border-left: 1px solid var(--border-color);
+  padding-left: 4px;
+  min-width: 24px;
+  height: 24px;
 }
 
 #theme-toggle-btn {

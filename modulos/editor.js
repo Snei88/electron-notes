@@ -980,11 +980,44 @@ function createEditor() {
   }
 
   function setToolbarExpanded(expanded) {
-    const { toolbarEl, toolbarToggle } = elements;
+    const { toolbarEl, toolbarToggle, container } = elements;
     if (!toolbarEl || !toolbarToggle) return;
+    
     toolbarEl.classList.toggle('collapsed', !expanded);
     toolbarToggle.textContent = expanded ? 'expand_less' : 'expand_more';
     toolbarToggle.setAttribute('aria-expanded', String(expanded));
+    
+    // Modo expandido tipo Word
+    if (expanded) {
+      // Guardar tamaño original si no existe
+      if (!container.dataset.originalWidth) {
+        const currentBounds = require('electron').remote?.getCurrentWindow()?.getBounds();
+        if (currentBounds) {
+          container.dataset.originalWidth = currentBounds.width;
+          container.dataset.originalHeight = currentBounds.height;
+        }
+      }
+      
+      // Expandir ventana
+      try {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('expand-note-window', state.noteId);
+      } catch (e) {
+        console.warn('No se pudo expandir ventana:', e);
+      }
+      
+      container.classList.add('word-mode');
+    } else {
+      // Restaurar tamaño original
+      try {
+        const { ipcRenderer } = require('electron');
+        ipcRenderer.send('restore-note-window', state.noteId);
+      } catch (e) {
+        console.warn('No se pudo restaurar ventana:', e);
+      }
+      
+      container.classList.remove('word-mode');
+    }
   }
 
   function applyBackgroundColor(color) {
