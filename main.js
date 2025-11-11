@@ -235,18 +235,30 @@ function createFloatingNoteWindow(note) {
         return;
     }
     const noteWindow = new BrowserWindow({
-        width: 350, height: 350, frame: false, transparent: true,
+        width: 400,
+        height: 450,
+        minWidth: 300,
+        minHeight: 200,
+        frame: false,
+        transparent: true,
+        resizable: true,
         webPreferences: { 
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: false
         },
-        skipTaskbar: true, show: false,
+        skipTaskbar: true,
+        show: false,
     });
     noteWindow.loadFile('note.html', { hash: note.id });
     noteWindow.once('ready-to-show', () => {
+        noteWindow.setSize(400, 450);
         noteWindow.show();
+        // Forzar redibujado después de mostrar
+        setTimeout(() => {
+            noteWindow.setSize(400, 450);
+        }, 100);
         if (note.isPinned) noteWindow.setAlwaysOnTop(true, 'screen-saver');
     });
     noteWindow.on('closed', () => { floatingWindows.delete(note.id); });
@@ -315,12 +327,19 @@ function main() {
     ipcMain.on('open-in-float-window', (event, noteId) => {
         if (notes[noteId]) createFloatingNoteWindow(notes[noteId]);
     });
+
+    // Agregar estos nuevos handlers en main.js, en la sección de IPC handlers
     ipcMain.on('float-window-action', (event, { action, noteId }) => {
         const window = floatingWindows.get(noteId);
         if (!window) return;
+        
         switch (action) {
-            case 'minimize': window.minimize(); break;
-            case 'close': window.close(); break;
+            case 'minimize': 
+                window.minimize(); 
+                break;
+            case 'close': 
+                window.close(); 
+                break;
             case 'toggle-pin':
                 const note = notes[noteId];
                 note.isPinned = !note.isPinned;
@@ -329,22 +348,101 @@ function main() {
                 if(mainWindow) mainWindow.webContents.send('note-updated', note);
                 saveNotes();
                 break;
+            case 'expand-word':
+                // Handler específico para modo Word
+                expandToWordMode(window, noteId);
+                break;
+            case 'restore':
+                // Handler específico para restaurar
+                restoreToFloatingMode(window, noteId);
+                break;
         }
     });
+
+    // Función auxiliar para expandir a modo Word
+    function expandToWordMode(window, noteId) {
+        const { screen } = require('electron');
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const { width, height } = primaryDisplay.workAreaSize;
+        
+        const newWidth = Math.floor(width * 0.92);
+        const newHeight = Math.floor(height * 0.92);
+        
+        window.setBounds({
+            width: newWidth,
+            height: newHeight,
+            x: Math.floor((width - newWidth) / 2),
+            y: Math.floor((height - newHeight) / 2)
+        });
+        
+        window.setResizable(true);
+        window.setMaximizable(true);
+        window.setMinimumSize(800, 600);
+        
+        console.log(`📝 Ventana ${noteId} en modo Word: ${newWidth}x${newHeight}`);
+    }
+
+    // Función auxiliar para restaurar modo flotante
+    function restoreToFloatingMode(window, noteId) {
+        window.setBounds({
+            width: 400,
+            height: 450
+        });
+        
+        window.center();
+        window.setResizable(true);
+        window.setMinimumSize(300, 200);
+        
+        console.log(`📝 Ventana ${noteId} restaurada a modo flotante: 400x450`);
+    }
     
     // Handlers para modo Word
     ipcMain.on('expand-note-window', (event, noteId) => {
         const window = floatingWindows.get(noteId);
         if (!window) return;
-        window.setBounds({ width: 900, height: 700 });
-        window.center();
+
+        // Obtener el tamaño de la pantalla
+        const { screen } = require('electron');
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const { width, height } = primaryDisplay.workAreaSize;
+
+        // Configurar ventana para modo Word (80% del área de trabajo)
+        const newWidth = Math.floor(width * 0.8);
+        const newHeight = Math.floor(height * 0.8);
+
+        window.setBounds({
+            width: newWidth,
+            height: newHeight,
+            x: Math.floor((width - newWidth) / 2),
+            y: Math.floor((height - newHeight) / 2)
+        });
+
+        // Permitir redimensionamiento y maximización
+        window.setResizable(true);
+        window.setMaximizable(true);
+        window.setMinimumSize(600, 400);
+
+        console.log(`✅ Ventana ${noteId} expandida a: ${newWidth}x${newHeight}`);
     });
+
     
     ipcMain.on('restore-note-window', (event, noteId) => {
         const window = floatingWindows.get(noteId);
         if (!window) return;
-        window.setBounds({ width: 350, height: 350 });
+
+    // Restaurar tamaño original de nota flotante
+    window.setBounds({
+        width: 350,
+        height: 350
     });
+
+        // Centrar en la pantalla
+        window.center();
+        
+        console.log(`✅ Ventana ${noteId} restaurada a tamaño flotante`);
+    });
+
+
     ipcMain.on('save-reminder', (event, reminder) => {
         console.log('Main: Guardando recordatorio:', reminder);
         reminders[reminder.id] = reminder;

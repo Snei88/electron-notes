@@ -189,6 +189,7 @@ function createEditor() {
     state.currentNote.content = sanitizeHTML(contentEl.innerHTML);
     debouncedSave();
     updateUndoRedoUI();
+    resetToFloatingMode();
     refreshDecorationButtonStates();
   }
 
@@ -804,7 +805,8 @@ function createEditor() {
 
     titleEl.textContent = note.title || 'Nueva Nota';
 
-    const newContent = note.content || '';
+    const emptyLinesContent = '<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>';
+    const newContent = note.content || emptyLinesContent;
     if (contentEl.innerHTML !== newContent) {
       const sel = saveSelection();
       contentEl.innerHTML = newContent;
@@ -852,7 +854,18 @@ function createEditor() {
     refreshDecorationButtonStates();
   }
 
-  function setPinnedUI(isPinned) {
+  function resetToFloatingMode() {
+    const { container, toolbarEl, toolbarToggle } = elements;
+    if (!container) return;
+    container.classList.remove('word-mode');
+    document.body.classList.remove('word-mode-active');
+    if (toolbarEl) {
+      toolbarEl.classList.add('collapsed');
+      if (toolbarToggle) toolbarToggle.textContent = 'expand_more';
+    }
+  }
+
+    function setPinnedUI(isPinned) {
     const { pinBtn } = elements;
     if (!pinBtn) return;
     pinBtn.classList.toggle('active', !!isPinned);
@@ -1562,4 +1575,8 @@ function createEditor() {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { createEditor };
 }
+
+
+
+
 

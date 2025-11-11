@@ -116,6 +116,10 @@ const api = {
   onSettingsChanged: makeOn('settings:changed'),
   offSettingsChanged: () => ipcRenderer.removeAllListeners('settings:changed'),
 
+  //modo word
+  floatWindowAction: (action, noteId) => {
+    ipcRenderer.send('float-window-action', { action, noteId });
+  }
 
 };
 

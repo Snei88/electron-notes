@@ -16,25 +16,571 @@
   --font-main: 'Roboto', sans-serif;
 }
 
-/* Agrupación de estilos dividida en varios archivos dentro de /styles/
-   Este archivo actúa como 'entry' para compatibilidad con enlaces existentes.
-   Mantiene la referencia original `styles.css` en HTML e importa los módulos.
+/* Tema claro */
+:root[data-theme="light"] {
+  --bg-dark: #f8fafc;
+  --bg-medium: #f1f5f9;
+  --bg-light: #ffffff;
+  --primary-color: #2563eb;
+  --text-light: #334155;
+  --text-dark: #0f172a;
+  --border-color: #e2e8f0;
+  --sidebar-bg: #ffffff;
+  --sidebar-border: #e2e8f0;
+  --muted: #64748b;
+  --table-border: #e2e8f0;
+  --table-head-bg: #f8fafc;
+  --table-head-border: #e2e8f0;
+}
 
-   Actualiza o extiende los archivos en styles/ (base.css, toolbar.css, audio.css, modals.css,
-   theme.css, responsive.css, utils.css) para mantener estilos separados por responsabilidad.
-*/
+/* ===================================
+   ESTILOS BASE
+   =================================== */
 
-@import "./styles/base.css";
-@import "./styles/toolbar.css";
-@import "./styles/audio.css";
-@import "./styles/modals.css";
-@import "./styles/theme.css";
-@import "./styles/responsive.css";
-@import "./styles/utils.css";
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-/* Nota: por ahora la mayor parte de reglas quedan en styles/base.css. Si quieres,
-   puedo continuar el trabajo y mover gradualmente secciones específicas
-   (por ejemplo, trasladar todo lo relacionado con toolbar a toolbar.css, etc.). */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  overflow: hidden;
+  transition: background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===================================
+   SCROLLBAR
+   =================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ===================================
+   TIPOGRAFÍA
+   =================================== */
+
+h1, h2, h3, th, .window-title, .float-title {
+  color: var(--text-dark);
+  font-weight: 700;
+}
+
+/* ===================================
+   LAYOUT PRINCIPAL
+   =================================== */
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.main-content-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ===================================
+   SIDEBAR
+   =================================== */
+
+.sidebar {
+  width: 300px;
+  background-color: var(--bg-dark);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h1 {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.sidebar a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  color: #999999;
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.sidebar a span.material-symbols-outlined {
+  font-size: 1.5rem;
+  transition: color 0.3s;
+}
+
+.sidebar a.bg-primary-500\/10,
+.sidebar a.text-primary-500 {
+  color: white;
+}
+
+.sidebar a.bg-primary-500\/10 span.material-symbols-outlined,
+.sidebar a.text-primary-500 span.material-symbols-outlined {
+  color: white;
+}
+
+#notes-list {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+/* ===================================
+   NOTE ITEMS
+   =================================== */
+
+.note-item {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.note-item:hover {
+  background-color: var(--bg-light);
+}
+
+.note-item.selected {
+  background-color: var(--primary-color);
+}
+
+.note-item h2 {
+  font-size: 1rem;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-item p {
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+.list-pin-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 0.8rem;
+  color: #f0f0f0;
+}
+
+/* ===================================
+   EDITOR
+   =================================== */
+
+.editor-container {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #777;
+  font-size: 1.2rem;
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--bg-medium);
+  transition: background-color 0.3s;
+}
+
+.editor.collapsed {
+  height: auto;
+}
+
+.editor.collapsed #note-content {
+  display: none;
+}
+
+/* ===================================
+   TOOLBAR
+   =================================== */
+
+.editor-toolbar,
+.float-toolbar,
+.float-reminder {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: var(--bg-dark);
+  border-bottom: 1px solid var(--border-color);
+  gap: 0.5rem;
+}
+
+.editor-toolbar button,
+.editor-toolbar select,
+.editor-toolbar input,
+.float-toolbar select,
+.float-toolbar input[type="color"] {
+  background: var(--bg-light);
+  color: var(--text-light);
+  border: 1px solid var(--border-color);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.editor-toolbar button.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.editor-toolbar button:hover,
+.float-toolbar .material-icons:hover {
+  background-color: var(--bg-light);
+}
+
+#font-size-input {
+  width: 60px;
+}
+
+#color-picker {
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  border: none;
+  cursor: pointer;
+}
+
+#pin-btn {
+  margin-left: auto;
+  font-size: 1.2rem;
+}
+
+/* ===================================
+   NOTE CONTENT
+   =================================== */
+
+#note-title {
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  font-size: 1.8rem;
+  font-weight: 500;
+  padding: 1rem;
+  outline: none;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#note-content,
+#float-content {
+  flex-grow: 1;
+  padding: 1rem;
+  font-size: 16px;
+  line-height: 1.6;
+  outline: none;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+  white-space: normal;
+  min-height: 0;
+}
+
+/* ===================================
+   CONTEXT MENU
+   =================================== */
+
+.context-menu {
+  display: none;
+  position: fixed;
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 5px 0;
+  z-index: 1000;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.context-menu-item {
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.context-menu-item:hover {
+  background-color: var(--primary-color);
+}
+
+/* ===================================
+   FLOATING WINDOWS
+   =================================== */
+
+.float-body {
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Agregar estos estilos a styles.css */
+
+/* Modo Word - Estilos corregidos */
+.float-note-container.word-mode {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 10000;
+  background: var(--bg-medium) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Body cuando está en modo Word */
+body.word-mode-active {
+  overflow: hidden;
+  background: transparent !important;
+}
+
+/* Contenido en modo Word - Mejorado */
+.float-note-container.word-mode .float-content {
+  width: 92%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 80px;
+  font-size: 16px;
+  line-height: 1.8;
+  min-height: calc(100vh - 120px);
+  height: auto !important;
+  overflow-y: auto;
+  background: var(--bg-light);
+  border-radius: 8px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ===================================
+   TOOLBAR EN MODO WORD - HORIZONTAL COMPLETA
+   =================================== */
+
+.float-note-container.word-mode .float-toolbar {
+  padding: 8px 16px;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-color);
+  max-height: none !important;
+  height: auto !important;
+  min-height: 50px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+/* Toolbar básica siempre visible en modo Word */
+.float-note-container.word-mode .toolbar-basic {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 12px;
+  border-right: 1px solid var(--border-color);
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+/* Botón de toggle en modo Word */
+.float-note-container.word-mode #toolbar-toggle {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.float-note-container.word-mode .float-toolbar.collapsed {
+  max-height: 50px;
+  overflow: hidden;
+}
+
+.float-note-container.word-mode .float-toolbar:not(.collapsed) {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Barra de título en modo Word */
+.float-note-container.word-mode .custom-title-bar {
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-color);
+  height: 40px;
+  padding: 0 20px;
+}
+
+.float-note-container.word-mode .window-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Mejoras para el área de contenido editable */
+.float-note-container.word-mode .float-content:focus {
+  outline: none;
+  border: 2px solid var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(56, 224, 123, 0.1);
+}
+
+/* Scrollbar mejorado para modo Word */
+.float-note-container.word-mode .float-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.float-note-container.word-mode .float-content::-webkit-scrollbar-track {
+  background: var(--bg-medium);
+  border-radius: 4px;
+}
+
+.float-note-container.word-mode .float-content::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+/* Sección de audio en modo Word */
+.float-note-container.word-mode .audio-player-section {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 80px;
+}
+
+/* Ajustes responsivos para modo Word */
+@media (max-width: 1024px) {
+  .float-note-container.word-mode .float-content {
+    width: 92%;
+    max-width: 850px;
+    padding: 40px;
+    margin: 10px auto;
+  }
+  
+  .float-note-container.word-mode .audio-player-section {
+    width: 92%;
+    max-width: 850px;
+    padding: 0 40px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .float-note-container.word-mode .float-content {
+    width: 92%;
+    max-width: none;
+    padding: 20px;
+    margin: 5px auto;
+  }
+  
+  .float-note-container.word-mode .audio-player-section {
+    width: 92%;
+    max-width: none;
+    padding: 0 20px;
+    margin: 0 auto;
+  }
+}
+
+
+
+
+/* Opciones de toolbar en modo Word - DISPLAY HORIZONTAL */
+.float-note-container.word-mode .toolbar-options {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+}
+
+
+
+.float-note-container {
+  background-color: var(--bg-medium);
+  border-radius: 8px;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  user-select: none;
+}
+
+/* Override max-height para floating window */
+.float-body .float-note-container {
+  max-height: none !important;
+}
+
+.float-body .float-content {
+  max-height: none !important;
+  min-height: 0 !important;
+  flex-grow: 1;
+  flex-basis: auto;
+}
+
+.float-body .float-toolbar {
+  max-height: 32px !important;
+}
+
+.float-body .custom-title-bar {
+  max-height: none !important;
+}
+
+.float-note-container.collapsed {
+  height: auto;
+}
+
 .float-note-container.collapsed .float-content {
   display: none;
 }
@@ -48,6 +594,7 @@
   padding: 0 10px;
   user-select: none;
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .title-bar-content {
@@ -142,6 +689,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   flex-wrap: nowrap;
+  flex-shrink: 0;
   scrollbar-width: thin;
   max-height: 32px;
 }
@@ -296,10 +844,6 @@
   background: var(--primary-color);
   border-radius: 2px;
   opacity: 0.6;
-}
-
-.float-note-container.word-mode .float-toolbar::-webkit-scrollbar-thumb:hover {
-  opacity: 0.8;
 }
 
 /* ===================================
@@ -677,6 +1221,7 @@
   padding: 12px;
   background: var(--bg-dark);
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .audio-section-header {
@@ -939,7 +1484,7 @@
 }
 
 .loading-dot:nth-child(1) { animation-delay: -0.32s; }
-.loading-dot:nth-child(2) { animation-delay: -0.16s; }
+loading-dot:nth-child(2) { animation-delay: -0.16s; }
 
 @keyframes pulse {
   0%, 80%, 100% {
@@ -1095,20 +1640,6 @@
 .modal-btn-danger:hover {
   background: #dc2626;
   transform: translateY(-1px);
-}
-
-.modal-btn-secondary {
-  background: var(--bg-light);
-  color: var(--text-light);
-}
-
-.modal-btn-secondary:hover {
-  background: var(--border-color);
-  transform: translateY(-1px);
-}
-
-.modal-btn:active {
-  transform: translateY(0);
 }
 
 /* ===================================
@@ -1627,7 +2158,6 @@ html:not([data-theme="light"]) {
 
   & thead {
     background-color: #0f172a !important;
-    border-bottom: 1px solid #1f2937 !important;
   }
 
   & th {
@@ -1752,3 +2282,8 @@ html:not([data-theme="light"]) {
   background: var(--primary-color);
   border-radius: 2px;
 }
+
+
+
+
+

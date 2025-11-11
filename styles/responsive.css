@@ -1,0 +1,9 @@
+/* Media queries y reglas responsivas separadas */
+
+@media (max-width: 768px) {
+  /* Ejemplos: ajustar toolbar y notas */
+}
+
+@media (max-width: 480px) {
+  /* Ejemplos: mobile tweaks */
+}

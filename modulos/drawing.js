@@ -99,3 +99,25 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = { registerDrawingModule };
 }
 
+function validateCanvas(canvas) {
+  if (!canvas || typeof canvas.toDataURL !== 'function') {
+    throw new Error('Canvas no válido para exportar');
+  }
+  return canvas.width > 0 && canvas.height > 0;
+}
+
+
+function compressImage(dataURL, quality = 0.8) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataURL;
+  });
+}

@@ -148,3 +148,24 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = { elements, state, api, setNoteId, cacheElements, getElement, setCurrentNote, updateAPI };
 }
 
+// 1. Validación de elementos
+function validateElements() {
+  const missing = Object.keys(elements).filter(key => !elements[key]);
+  if (missing.length) {
+    console.warn('Elementos faltantes:', missing);
+  }
+}
+
+// 2. Estado persistente
+function saveState() {
+  localStorage.setItem('noteState', JSON.stringify(state));
+}
+
+// 3. Reset de estado
+function resetState() {
+  Object.keys(state).forEach(key => {
+    if (key !== 'audioQualityPresets') {
+      state[key] = null;
+    }
+  });
+}

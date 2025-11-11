@@ -1,0 +1,11 @@
+/* Estilos específicos para toolbar (separados para mantenimiento)
+   Actualmente importados desde styles.css
+   Puedes mover aquí reglas relacionadas con .float-toolbar, .toolbar-options, .toolbar-basic, word-mode toolbar, selects, color controls, etc.
+*/
+
+/* Placeholder inicial - todavía se usa la mayoría de reglas en styles/base.css. */
+
+/* Ejemplo de override rapido */
+.float-toolbar.compact {
+  transition: all 0.12s ease;
+}

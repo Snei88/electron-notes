@@ -1,0 +1,5 @@
+/* Utilidades y helpers locales (placeholders)
+   Puedes mover reglas como .hidden, .truncate, .max-w-xs, animations, etc.
+*/
+
+.hidden { display: none !important; }

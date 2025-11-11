@@ -2,10 +2,6 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
   <title>Nota Flotante</title>
 
   <!-- Tailwind (para utilidades como .hidden, etc.) -->
@@ -33,7 +29,6 @@
 
         <div class="float-controls">
           <button id="float-pin-btn" type="button" title="Fijar" class="material-icons" aria-label="Fijar">push_pin</button>
-          <button id="float-collapse-btn" type="button" title="Colapsar" class="material-icons" aria-label="Colapsar">expand_less</button>
           <button id="float-min-btn" type="button" title="Minimizar" class="material-icons" aria-label="Minimizar">minimize</button>
           <button id="float-close-btn" type="button" title="Cerrar" class="material-icons" aria-label="Cerrar">close</button>
           <button id="float-delete-btn" type="button" title="Eliminar" class="material-icons" aria-label="Eliminar">delete</button>
@@ -41,184 +36,151 @@
       </div>
     </div>
 
-    <!-- Toolbar -->
-    <div class="float-toolbar collapsed">
-      <div class="toolbar-basic">
-        <button data-cmd="bold"            type="button" class="material-icons" title="Negrita"      aria-label="Negrita">format_bold</button>
-        <button data-cmd="italic"          type="button" class="material-icons" title="Cursiva"      aria-label="Cursiva">format_italic</button>
-        <button data-cmd="underline"       type="button" class="material-icons" title="Subrayado"    aria-label="Subrayado">format_underlined</button>
-        <button data-cmd="strikeThrough"   type="button" class="material-icons" title="Tachado"      aria-label="Tachado">strikethrough_s</button>
+    <!-- Toolbar mejorada -->
+    <div class="float-toolbar collapsed" role="toolbar" aria-label="Barra de herramientas de edición">
+      <div class="toolbar-basic" role="group" aria-label="Acciones básicas">
+        <button data-cmd="bold" type="button" class="material-icons" title="Negrita" aria-label="Negrita">format_bold</button>
+        <button data-cmd="italic" type="button" class="material-icons" title="Cursiva" aria-label="Cursiva">format_italic</button>
+        <button data-cmd="underline" type="button" class="material-icons" title="Subrayado" aria-label="Subrayado">format_underlined</button>
+        <button data-cmd="strikeThrough" type="button" class="material-icons" title="Tachado" aria-label="Tachado">strikethrough_s</button>
       </div>
 
-      <!-- Toggle (usa material-icons para heredar estilos) -->
-      <button id="toolbar-toggle" type="button" class="material-icons" title="Mostrar/Ocultar opciones" aria-expanded="false" aria-controls="toolbar-opts">expand_more</button>
+      <button id="toolbar-toggle" type="button" class="material-icons" title="Modo Word" aria-expanded="false" aria-controls="toolbar-opts" aria-label="Alternar opciones">expand_more</button>
 
-      <div id="toolbar-opts" class="toolbar-options">
-        <!-- SISTEMA MEJORADO DE COLORES CON TOOLTIPS -->
-        <div class="toolbar-section">
+      <div id="toolbar-opts" class="toolbar-options" role="region" aria-label="Opciones de formato">
+        <!-- Sección de colores -->
+        <div class="toolbar-section" role="group" aria-label="Colores">
           <div class="color-control-group">
-            <!-- Selector de color de fondo -->
-            <div class="color-control" data-tooltip="Cambia el color de fondo de toda la nota">
+            <!-- Fondo -->
+            <div class="color-control">
               <label class="color-label">
-                <span class="material-symbols-outlined">format_paint</span>
-                Fondo
-                <span class="color-mode-indicator future">(futuro)</span>
+                <span class="material-symbols-outlined" aria-hidden="true">format_paint</span>
+                <span class="label-text">Fondo</span>
               </label>
               <div class="color-input-group">
-                <input type="color" id="background-color-picker" class="color-picker" value="#2c2c2c">
-                <button id="reset-background-color" class="color-reset-btn" title="Color predeterminado">
-                  <span class="material-symbols-outlined">restore</span>
+                <input type="color" id="background-color-picker" class="color-picker" value="#2c2c2c" aria-label="Color de fondo" />
+                <button id="reset-background-color" class="color-reset-btn" title="Restaurar fondo" aria-label="Restaurar fondo">
+                  <span class="material-symbols-outlined" aria-hidden="true">restore</span>
                 </button>
               </div>
             </div>
 
-            <!-- Selector de color de texto -->
-            <div class="color-control" data-tooltip="Aplica a texto seleccionado o al texto futuro">
+            <!-- Texto -->
+            <div class="color-control">
               <label class="color-label">
-                <span class="material-symbols-outlined">format_color_text</span>
-                Texto
-                <span class="color-mode-indicator future">(futuro)</span>
+                <span class="material-symbols-outlined" aria-hidden="true">format_color_text</span>
+                <span class="label-text">Texto</span>
               </label>
               <div class="color-input-group">
-                <input type="color" id="text-color-picker" class="color-picker" value="#ffffff">
-                <button id="reset-text-color" class="color-reset-btn" title="Color predeterminado">
-                  <span class="material-symbols-outlined">format_color_reset</span>
+                <input type="color" id="text-color-picker" class="color-picker" value="#ffffff" aria-label="Color de texto" />
+                <button id="reset-text-color" class="color-reset-btn" title="Restaurar texto" aria-label="Restaurar color de texto">
+                  <span class="material-symbols-outlined" aria-hidden="true">format_color_reset</span>
                 </button>
               </div>
             </div>
 
-            <!-- Selector de color de resaltado -->
-            <div class="color-control" data-tooltip="Aplica a texto seleccionado">
+            <!-- Resaltado -->
+            <div class="color-control">
               <label class="color-label">
-                <span class="material-symbols-outlined">highlight</span>
-                Resaltar
-                <span class="color-mode-indicator future">(futuro)</span>
+                <span class="material-symbols-outlined" aria-hidden="true">highlight</span>
+                <span class="label-text">Resaltar</span>
               </label>
               <div class="color-input-group">
-                <input type="color" id="highlight-color-picker" class="color-picker" value="#ffff00">
-                <button id="reset-highlight-color" class="color-reset-btn" title="Quitar resaltado">
-                  <span class="material-symbols-outlined">highlight_off</span>
+                <input type="color" id="highlight-color-picker" class="color-picker" value="#ffff00" aria-label="Color de resaltado" />
+                <button id="reset-highlight-color" class="color-reset-btn" title="Quitar resaltado" aria-label="Quitar resaltado">
+                  <span class="material-symbols-outlined" aria-hidden="true">highlight_off</span>
                 </button>
-              </div>
-            </div>
-
-            <!-- Estilos de subrayado -->
-            <div class="color-control" data-tooltip="Elige el estilo del subrayado">
-              <label class="color-label">
-                <span class="material-symbols-outlined">format_underlined</span>
-                Estilo subrayado
-              </label>
-              <div class="color-input-group">
-                <select id="underline-style-select" class="decoration-select">
-                  <option value="solid" selected>Simple</option>
-                  <option value="double">Doble</option>
-                  <option value="dotted">Punteado</option>
-                  <option value="dashed">Discontinuo</option>
-                  <option value="wavy">Ondulado</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="color-control" data-tooltip="Ajusta el grosor del subrayado">
-              <label class="color-label">
-                <span class="material-symbols-outlined">straighten</span>
-                Grosor subrayado
-              </label>
-              <div class="color-input-group">
-                <select id="underline-thickness-select" class="decoration-select">
-                  <option value="auto" selected>Automático</option>
-                  <option value="1px">Delgado</option>
-                  <option value="2px">Medio</option>
-                  <option value="3px">Grueso</option>
-                  <option value="4px">Extra</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Estilos de tachado -->
-            <div class="color-control" data-tooltip="Elige el estilo del tachado">
-              <label class="color-label">
-                <span class="material-symbols-outlined">strikethrough_s</span>
-                Estilo tachado
-              </label>
-              <div class="color-input-group">
-                <select id="strike-style-select" class="decoration-select">
-                  <option value="solid" selected>Simple</option>
-                  <option value="double">Doble</option>
-                  <option value="dotted">Punteado</option>
-                  <option value="dashed">Discontinuo</option>
-                  <option value="wavy">Ondulado</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="color-control" data-tooltip="Ajusta el grosor del tachado">
-              <label class="color-label">
-                <span class="material-symbols-outlined">format_strikethrough</span>
-                Grosor tachado
-              </label>
-              <div class="color-input-group">
-                <select id="strike-thickness-select" class="decoration-select">
-                  <option value="auto" selected>Automático</option>
-                  <option value="1px">Delgado</option>
-                  <option value="2px">Medio</option>
-                  <option value="3px">Grueso</option>
-                  <option value="4px">Extra</option>
-                </select>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Listas / indentación -->
-        <button data-cmd="insertUnorderedList" type="button" class="material-icons" title="Lista con viñetas" aria-label="Lista con viñetas">format_list_bulleted</button>
-        <button data-cmd="insertOrderedList"   type="button" class="material-icons" title="Lista numerada"    aria-label="Lista numerada">format_list_numbered</button>
-        <button data-cmd="outdent"             type="button" class="material-icons" title="Disminuir sangría" aria-label="Disminuir sangría">format_indent_decrease</button>
-        <button data-cmd="indent"              type="button" class="material-icons" title="Aumentar sangría"  aria-label="Aumentar sangría">format_indent_increase</button>
+        <!-- Formato de texto -->
+        <div class="toolbar-section" role="group" aria-label="Formato de texto">
+          <select id="font-name" title="Fuente" aria-label="Fuente">
+            <option>Arial</option>
+            <option>Georgia</option>
+            <option>Tahoma</option>
+            <option>Courier New</option>
+          </select>
 
-        <!-- Alineación -->
-        <button data-cmd="justifyLeft"   type="button" class="material-icons" title="Alinear izquierda" aria-label="Alinear izquierda">format_align_left</button>
-        <button data-cmd="justifyCenter" type="button" class="material-icons" title="Centrar"           aria-label="Centrar">format_align_center</button>
-        <button data-cmd="justifyRight"  type="button" class="material-icons" title="Alinear derecha"   aria-label="Alinear derecha">format_align_right</button>
-        <button data-cmd="justifyFull"   type="button" class="material-icons" title="Justificar"        aria-label="Justificar">format_align_justify</button>
+          <select id="font-size" title="Tamaño" aria-label="Tamaño de fuente">
+            <option value="2">12</option>
+            <option value="3" selected>14</option>
+            <option value="4">16</option>
+            <option value="5">18</option>
+            <option value="6">24</option>
+          </select>
 
-        <!-- Bloques -->
-        <select id="block-format" title="Encabezados" aria-label="Formato de bloque">
-          <option value="p">Párrafo</option>
-          <option value="h1">H1</option>
-          <option value="h2">H2</option>
-          <option value="h3">H3</option>
-          <option value="blockquote">Cita</option>
-          <option value="pre">Código</option>
-        </select>
+          <select id="block-format" title="Formato" aria-label="Formato de bloque">
+            <option value="p">Párrafo</option>
+            <option value="h1">Título 1</option>
+            <option value="h2">Título 2</option>
+            <option value="h3">Título 3</option>
+            <option value="blockquote">Cita</option>
+            <option value="pre">Código</option>
+          </select>
+        </div>
 
-        <!-- Fuente / tamaño -->
-        <select id="font-name" title="Tipografía" aria-label="Tipografía">
-          <option>Arial</option>
-          <option>Georgia</option>
-          <option>Tahoma</option>
-          <option>Courier New</option>
-        </select>
+        <!-- Decoración (subrayado/tachado) -->
+        <div class="toolbar-section" role="group" aria-label="Decoración">
+          <select id="underline-style-select" class="decoration-select" title="Estilo subrayado" aria-label="Estilo subrayado">
+            <option value="solid">Subrayado Simple</option>
+            <option value="double">Subrayado Doble</option>
+            <option value="dotted">Subrayado Punteado</option>
+            <option value="dashed">Subrayado Discontinuo</option>
+            <option value="wavy">Subrayado Ondulado</option>
+          </select>
 
-        <select id="font-size" title="Tamaño (selección)" aria-label="Tamaño de fuente">
-          <option value="2">12</option>
-          <option value="3" selected>14</option>
-          <option value="4">16</option>
-          <option value="5">18</option>
-          <option value="6">24</option>
-        </select>
+          <select id="underline-thickness-select" class="decoration-select" title="Grosor subrayado" aria-label="Grosor subrayado">
+            <option value="auto">Grosor Auto</option>
+            <option value="1px">Grosor Delgado</option>
+            <option value="2px">Grosor Medio</option>
+            <option value="3px">Grosor Grueso</option>
+            <option value="4px">Grosor Extra</option>
+          </select>
 
-        <!-- Imágenes / limpiar / undo/redo -->
-        <button id="btn-image" type="button" class="material-icons" title="Insertar imagen" aria-label="Insertar imagen">image</button>
-        <input id="image-input" type="file" accept="image/*" hidden />
-        <button data-cmd="insertHorizontalRule" type="button" class="material-icons" title="Regla horizontal" aria-label="Regla horizontal">horizontal_rule</button>
-        <button data-cmd="removeFormat"        type="button" class="material-icons" title="Quitar formato"    aria-label="Quitar formato">format_clear</button>
-        <button data-cmd="undo"                type="button" class="material-icons" title="Deshacer"          aria-label="Deshacer">undo</button>
-        <button data-cmd="redo"                type="button" class="material-icons" title="Rehacer"           aria-label="Rehacer">redo</button>
+          <select id="strike-style-select" class="decoration-select" title="Estilo tachado" aria-label="Estilo tachado">
+            <option value="solid">Tachado Simple</option>
+            <option value="double">Tachado Doble</option>
+            <option value="dotted">Tachado Punteado</option>
+            <option value="dashed">Tachado Discontinuo</option>
+            <option value="wavy">Tachado Ondulado</option>
+          </select>
 
-        <!-- Sup/Sub -->
-        <button data-cmd="superscript" type="button" class="material-icons" title="Superíndice" aria-label="Superíndice">superscript</button>
-        <button data-cmd="subscript"   type="button" class="material-icons" title="Subíndice"   aria-label="Subíndice">subscript</button>
+          <select id="strike-thickness-select" class="decoration-select" title="Grosor tachado" aria-label="Grosor tachado">
+            <option value="auto">Grosor Auto</option>
+            <option value="1px">Grosor Delgado</option>
+            <option value="2px">Grosor Medio</option>
+            <option value="3px">Grosor Grueso</option>
+            <option value="4px">Grosor Extra</option>
+          </select>
+        </div>
+
+        <!-- Alineación y listas -->
+        <div class="toolbar-section" role="group" aria-label="Alineación y listas">
+          <button data-cmd="justifyLeft" type="button" class="material-icons" title="Alinear izquierda" aria-label="Alinear izquierda">format_align_left</button>
+          <button data-cmd="justifyCenter" type="button" class="material-icons" title="Centrar" aria-label="Centrar">format_align_center</button>
+          <button data-cmd="justifyRight" type="button" class="material-icons" title="Alinear derecha" aria-label="Alinear derecha">format_align_right</button>
+          <button data-cmd="justifyFull" type="button" class="material-icons" title="Justificar" aria-label="Justificar">format_align_justify</button>
+
+          <button data-cmd="insertUnorderedList" type="button" class="material-icons" title="Lista con viñetas" aria-label="Lista con viñetas">format_list_bulleted</button>
+          <button data-cmd="insertOrderedList" type="button" class="material-icons" title="Lista numerada" aria-label="Lista numerada">format_list_numbered</button>
+          <button data-cmd="outdent" type="button" class="material-icons" title="Disminuir sangría" aria-label="Disminuir sangría">format_indent_decrease</button>
+          <button data-cmd="indent" type="button" class="material-icons" title="Aumentar sangría" aria-label="Aumentar sangría">format_indent_increase</button>
+        </div>
+
+        <!-- Acciones -->
+        <div class="toolbar-section" role="group" aria-label="Acciones adicionales">
+          <button id="btn-image" type="button" class="material-icons" title="Insertar imagen" aria-label="Insertar imagen">image</button>
+          <input id="image-input" type="file" accept="image/*" hidden />
+          <button data-cmd="insertHorizontalRule" type="button" class="material-icons" title="Línea horizontal" aria-label="Línea horizontal">horizontal_rule</button>
+          <button data-cmd="removeFormat" type="button" class="material-icons" title="Limpiar formato" aria-label="Limpiar formato">format_clear</button>
+          <button data-cmd="undo" type="button" class="material-icons" title="Deshacer" aria-label="Deshacer">undo</button>
+          <button data-cmd="redo" type="button" class="material-icons" title="Rehacer" aria-label="Rehacer">redo</button>
+          <button data-cmd="superscript" type="button" class="material-icons" title="Superíndice" aria-label="Superíndice">superscript</button>
+          <button data-cmd="subscript" type="button" class="material-icons" title="Subíndice" aria-label="Subíndice">subscript</button>
+        </div>
       </div>
     </div>
 
