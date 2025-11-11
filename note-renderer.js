@@ -29,6 +29,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     setNoteId(noteId);
     cacheElements();
 
+    // Opening animation: add temporary classes to trigger CSS transitions
+    try {
+      const containerEl = document.getElementById('float-note-container');
+      if (containerEl) {
+        containerEl.classList.add('opening');
+        // small delay to allow CSS initial state, then switch to open
+        requestAnimationFrame(() => {
+          // next frame: add 'open' to animate to full state
+          containerEl.classList.add('open');
+          // remove transient 'opening' after animation completes
+          containerEl.addEventListener('transitionend', function _onEnd(e) {
+            if (e.propertyName === 'transform' || e.propertyName === 'opacity') {
+              containerEl.classList.remove('opening');
+              containerEl.removeEventListener('transitionend', _onEnd);
+            }
+          });
+        });
+      }
+    } catch (err) {
+      console.warn('Animación apertura no aplicada:', err);
+    }
+
     console.log('🎨 Creando editor...');
     const editor = createEditor();
     

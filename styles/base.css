@@ -321,7 +321,8 @@ h1, h2, h3, th, .window-title, .float-title {
   font-size: 16px;
   line-height: 1.6;
   outline: none;
-  overflow-y: auto;
+  /* No internal scrolling inside the editable area; toolbar handles scroll */
+  overflow: hidden;
   transition: all 0.3s ease;
   white-space: normal;
   min-height: 0;
@@ -556,6 +557,109 @@ body.word-mode-active {
   box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   user-select: none;
 }
+
+/* Opening animation / modern transitions */
+.float-note-container {
+  transform-origin: center top;
+  transition: transform 220ms cubic-bezier(.2,.9,.2,1),
+              opacity 220ms cubic-bezier(.2,.9,.2,1),
+              box-shadow 220ms ease;
+}
+
+.float-note-container.opening {
+  /* initial state before animating in */
+  transform: translateY(8px) scale(0.992);
+  opacity: 0;
+}
+
+.float-note-container.open {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+/* Subtle elevation on hover for modern feel */
+.float-note-container:hover {
+  box-shadow: 0 18px 48px rgba(0,0,0,0.45);
+  transform: translateY(-2px);
+}
+
+/* Smooth collapse/expand for toolbar and content */
+.float-toolbar,
+.custom-title-bar,
+#float-content {
+  transition: max-height 240ms cubic-bezier(.2,.9,.2,1),
+              opacity 200ms ease,
+              transform 200ms ease;
+}
+
+/* Modern toolbar button styles */
+.float-toolbar .material-icons,
+.float-toolbar button {
+  /* Modern rounded button with subtle glass effect */
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.04);
+  backdrop-filter: blur(4px);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin: 0 6px;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: background 180ms cubic-bezier(.2,.9,.2,1), transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset;
+}
+.float-toolbar .material-icons:hover,
+.float-toolbar button:hover {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.float-toolbar .material-icons:active,
+.float-toolbar button:active {
+  transform: translateY(0);
+}
+.float-toolbar .material-icons:focus,
+.float-toolbar button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(86,142,255,0.12);
+}
+.float-toolbar .material-icons.active,
+.float-toolbar button.active {
+  background: linear-gradient(180deg, rgba(68,120,240,0.14), rgba(68,120,240,0.08));
+  color: #fff;
+}
+
+/* Toolbar scrollbar styling (horizontal) */
+.float-toolbar {
+  -webkit-overflow-scrolling: touch;
+}
+.float-toolbar::-webkit-scrollbar {
+  height: 8px;
+}
+.float-toolbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.float-toolbar::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Word mode: gentle backdrop and smoother full-screen transition */
+body.word-mode-active::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.18);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  transition: opacity 260ms ease;
+}
+
+.float-note-container.word-mode {
+  transition: all 260ms cubic-bezier(.2,.9,.2,1);
+}
+
 
 /* Override max-height para floating window */
 .float-body .float-note-container {
